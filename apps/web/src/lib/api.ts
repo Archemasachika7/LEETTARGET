@@ -33,15 +33,63 @@ export async function addManualTarget(
   title: string,
   url: string
 ): Promise<void> {
-  const { error } = await requireClient().from("targets").insert({
+  const slug = slugFromLeetCodeUrl(url);
+  const client = requireClient();
+  const { error } = await client.from("targets").insert({
     user_id: userId,
     custom_title: title,
     custom_url: url,
-    slug: slugFromLeetCodeUrl(url),
+    slug,
     source: "manual" satisfies TargetSource,
     status: "pending",
   });
   if (error) throw error;
+
+  if (slug) await markAlreadySolvedTargetsDone(client, userId, [slug]);
+}
+
+/** Marks any of the given slugs "done" if the user already has a matching
+ * `solved_problems` row — closes the gap where a target created *after*
+ * a solve (a CSV upload, a manual add) would otherwise sit "pending"
+ * forever, since the "mark done" step normally only runs at solve time
+ * (an extension sync or a LeetCode import), against whatever targets
+ * existed at that moment. */
+async function markAlreadySolvedTargetsDone(
+  client: ReturnType<typeof requireClient>,
+  userId: string,
+  slugs: string[]
+): Promise<void> {
+  const uniqueSlugs = [...new Set(slugs)];
+  if (uniqueSlugs.length === 0) return;
+
+  const { data: problems, error: problemsError } = await client
+    .from("problems")
+    .select("id, slug")
+    .in("slug", uniqueSlugs);
+  if (problemsError) throw problemsError;
+  if (!problems || problems.length === 0) return;
+
+  const { data: solved, error: solvedError } = await client
+    .from("solved_problems")
+    .select("problem_id")
+    .eq("user_id", userId)
+    .in(
+      "problem_id",
+      problems.map((p) => p.id)
+    );
+  if (solvedError) throw solvedError;
+  if (!solved || solved.length === 0) return;
+
+  const solvedProblemIds = new Set(solved.map((s) => s.problem_id));
+  const solvedSlugs = problems.filter((p) => solvedProblemIds.has(p.id)).map((p) => p.slug);
+  if (solvedSlugs.length === 0) return;
+
+  const { error: targetError } = await client
+    .from("targets")
+    .update({ status: "done" })
+    .eq("user_id", userId)
+    .in("slug", solvedSlugs);
+  if (targetError) throw targetError;
 }
 
 /** Replaces the user's CSV-sourced pending targets with a freshly parsed
@@ -74,6 +122,9 @@ export async function replaceCsvTargets(
     }))
   );
   if (insertError) throw insertError;
+
+  const slugs = rows.map((r) => r.slug).filter((s): s is string => Boolean(s));
+  await markAlreadySolvedTargetsDone(client, userId, slugs);
 }
 
 export async function deleteTarget(id: string): Promise<void> {

@@ -13,7 +13,8 @@ interface Props {
  * is configured, since browsers can't call LeetCode's API directly. A
  * successful import also enrolls the username for the daily 9pm IST
  * auto-import (see `supabase/functions/daily-import`), so this doubles as
- * that feature's setup UI. */
+ * that feature's setup UI — and once enrolled, "Sync now" re-runs it for
+ * the saved username with one click, no retyping needed. */
 export function ImportLeetCode({ userId, onImported }: Props) {
   const [username, setUsername] = useState("");
   const [savedUsername, setSavedUsername] = useState<string>();
@@ -43,15 +44,14 @@ export function ImportLeetCode({ userId, onImported }: Props) {
     );
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function runImport(name: string) {
     setLoading(true);
     setError(undefined);
     setResult(undefined);
     try {
-      const outcome = await importFromLeetCode(userId, username, leetCodeProxyUrl!);
+      const outcome = await importFromLeetCode(userId, name, leetCodeProxyUrl!);
       setResult(outcome);
-      setSavedUsername(username);
+      setSavedUsername(name);
       onImported();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -60,16 +60,40 @@ export function ImportLeetCode({ userId, onImported }: Props) {
     }
   }
 
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    void runImport(username);
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-slate-200 p-4">
-      <h3 className="font-semibold text-slate-900">Import from LeetCode</h3>
+    <div className="rounded-lg border border-slate-200 p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-slate-900">Import from LeetCode</h3>
+        {savedUsername && (
+          <button
+            onClick={() => void runImport(savedUsername)}
+            disabled={loading}
+            className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {loading ? "Syncing..." : "Sync now"}
+          </button>
+        )}
+      </div>
       <p className="mt-1 text-sm text-slate-500">
         Backfills recent solves from a public profile — handy before the extension has seen everything.
       </p>
-      <div className="mt-3 flex gap-2">
+
+      {savedUsername && (
+        <p className="mt-2 text-xs text-slate-400">
+          Auto-imports daily at 9pm IST for <span className="font-medium">{savedUsername}</span>. "Sync
+          now" runs it immediately.
+        </p>
+      )}
+
+      <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
         <input
           required
-          placeholder="LeetCode username"
+          placeholder={savedUsername ? "Different username?" : "LeetCode username"}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
@@ -77,17 +101,11 @@ export function ImportLeetCode({ userId, onImported }: Props) {
         <button
           type="submit"
           disabled={loading}
-          className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 disabled:opacity-50"
         >
           {loading ? "Importing..." : "Import"}
         </button>
-      </div>
-
-      {savedUsername && (
-        <p className="mt-2 text-xs text-slate-400">
-          Auto-imports daily at 9pm IST for <span className="font-medium">{savedUsername}</span>.
-        </p>
-      )}
+      </form>
 
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       {result && (
@@ -97,6 +115,6 @@ export function ImportLeetCode({ userId, onImported }: Props) {
           solve{result.imported === 1 ? "" : "s"}.
         </p>
       )}
-    </form>
+    </div>
   );
 }
