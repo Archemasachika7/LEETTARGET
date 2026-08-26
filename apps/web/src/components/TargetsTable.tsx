@@ -2,9 +2,10 @@ import type { Target } from "@leettarget/shared";
 
 interface Props {
   targets: Target[];
+  onRemove?: (id: string) => void;
 }
 
-export function TargetsTable({ targets }: Props) {
+export function TargetsTable({ targets, onRemove }: Props) {
   if (targets.length === 0) {
     return <p className="text-sm text-slate-500">No targets yet — add one or upload a CSV.</p>;
   }
@@ -15,7 +16,8 @@ export function TargetsTable({ targets }: Props) {
         <tr className="border-b border-slate-200 text-left text-slate-500">
           <th className="py-1.5 pr-2 font-medium">Question</th>
           <th className="py-1.5 pr-2 font-medium">Source</th>
-          <th className="py-1.5 font-medium">Status</th>
+          <th className="py-1.5 pr-2 font-medium">Status</th>
+          {onRemove && <th className="py-1.5 font-medium" />}
         </tr>
       </thead>
       <tbody>
@@ -36,7 +38,7 @@ export function TargetsTable({ targets }: Props) {
               )}
             </td>
             <td className="py-1.5 pr-2 text-slate-500">{target.source}</td>
-            <td className="py-1.5">
+            <td className="py-1.5 pr-2">
               <span
                 className={
                   target.status === "done"
@@ -47,6 +49,17 @@ export function TargetsTable({ targets }: Props) {
                 {target.status}
               </span>
             </td>
+            {onRemove && (
+              <td className="py-1.5 text-right">
+                <button
+                  onClick={() => onRemove(target.id)}
+                  className="text-xs text-slate-400 hover:text-red-600"
+                  aria-label={`Remove ${target.customTitle ?? "target"}`}
+                >
+                  Remove
+                </button>
+              </td>
+            )}
           </tr>
         ))}
       </tbody>

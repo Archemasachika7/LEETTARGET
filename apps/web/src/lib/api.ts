@@ -1,5 +1,12 @@
-import type { GithubLink, Problem, SolvedProblem, Target, TargetSource } from "@leettarget/shared";
-import { slugFromLeetCodeUrl } from "@leettarget/shared";
+import type {
+  GithubLink,
+  LeetCodeSolvedSummary,
+  Problem,
+  SolvedProblem,
+  Target,
+  TargetSource,
+} from "@leettarget/shared";
+import { fetchRecentAcSubmissions, fetchSolvedSummary, slugFromLeetCodeUrl } from "@leettarget/shared";
 import { supabase } from "./supabaseClient.js";
 
 function requireClient() {
@@ -69,6 +76,11 @@ export async function replaceCsvTargets(
   if (insertError) throw insertError;
 }
 
+export async function deleteTarget(id: string): Promise<void> {
+  const { error } = await requireClient().from("targets").delete().eq("id", id);
+  if (error) throw error;
+}
+
 // --- github repo mapping -------------------------------------------------
 
 export async function getGithubLink(userId: string): Promise<GithubLink | undefined> {
@@ -90,6 +102,80 @@ export async function upsertGithubLink(link: GithubLink): Promise<void> {
     path_template: link.pathTemplate,
   });
   if (error) throw error;
+}
+
+// --- LeetCode import -------------------------------------------------------
+
+export interface LeetCodeImportResult {
+  summary: LeetCodeSolvedSummary;
+  /** How many of the fetched recent solves were written/updated. Capped by
+   * `fetchRecentAcSubmissions`'s limit — this is a recent-activity backfill,
+   * not a full history import (LeetCode's public API doesn't expose one). */
+  imported: number;
+}
+
+/** Pulls a public LeetCode profile's solved counts + recent accepted
+ * submissions through the edge-function proxy, upserts them into
+ * `problems`/`solved_problems`, and marks any matching target "done". */
+export async function importFromLeetCode(
+  userId: string,
+  username: string,
+  proxyUrl: string
+): Promise<LeetCodeImportResult> {
+  const [summary, recent] = await Promise.all([
+    fetchSolvedSummary(username, { proxyUrl }),
+    fetchRecentAcSubmissions(username, 100, { proxyUrl }),
+  ]);
+
+  if (recent.length === 0) {
+    return { summary, imported: 0 };
+  }
+
+  const client = requireClient();
+
+  const { data: problemRows, error: problemError } = await client
+    .from("problems")
+    .upsert(
+      recent.map((r) => ({
+        slug: r.slug,
+        title: r.title,
+        url: `https://leetcode.com/problems/${r.slug}/`,
+        // LeetCode's recent-submissions query doesn't include difficulty;
+        // it's filled in lazily (extension solves resolve it per-problem).
+        difficulty: "Unknown",
+      })),
+      { onConflict: "slug", ignoreDuplicates: false }
+    )
+    .select("id, slug");
+  if (problemError) throw problemError;
+
+  const problemIdBySlug = new Map((problemRows ?? []).map((p) => [p.slug as string, p.id as string]));
+
+  const { error: solvedError } = await client.from("solved_problems").upsert(
+    recent
+      .filter((r) => problemIdBySlug.has(r.slug))
+      .map((r) => ({
+        user_id: userId,
+        problem_id: problemIdBySlug.get(r.slug),
+        language: r.lang,
+        // LeetCode reports this in unix seconds; our column is a timestamptz.
+        solved_at: new Date(r.timestamp * 1000).toISOString(),
+      })),
+    { onConflict: "user_id,problem_id" }
+  );
+  if (solvedError) throw solvedError;
+
+  const { error: targetError } = await client
+    .from("targets")
+    .update({ status: "done" })
+    .eq("user_id", userId)
+    .in(
+      "slug",
+      recent.map((r) => r.slug)
+    );
+  if (targetError) throw targetError;
+
+  return { summary, imported: recent.length };
 }
 
 // --- solved problems -----------------------------------------------------

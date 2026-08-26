@@ -59,24 +59,42 @@ query recentAcSubmissions($username: String!, $limit: Int!) {
   }
 }`;
 
+/** The two operations `supabase/functions/leetcode-proxy` knows how to
+ * serve — it's a locked-down proxy (fixed query allowlist), not an open
+ * GraphQL passthrough, so proxied calls go through `{ op, username, limit
+ * }` rather than raw `{ query, variables }`. */
+type ProxyOp = "summary" | "recent";
+
 export interface LeetCodeClientOptions {
-  /** Defaults to the real LeetCode endpoint. Pass your proxy's URL when
-   * calling from a browser. */
+  /** Defaults to the real LeetCode endpoint. Ignored when `proxyUrl` is
+   * set. Browsers can't call the real endpoint directly (CORS) — pass
+   * `proxyUrl` instead when calling from the browser. */
   endpoint?: string;
+  /** URL of a deployed `leetcode-proxy` edge function. When set, requests
+   * go through it instead of `endpoint`, sidestepping the browser CORS
+   * restriction. Not needed server-side (the extension's background
+   * worker has `host_permissions` for leetcode.com and can call
+   * `endpoint` directly). */
+  proxyUrl?: string;
   fetchImpl?: typeof fetch;
 }
 
 async function graphql<T>(
+  op: ProxyOp,
   query: string,
   variables: Record<string, unknown>,
   options: LeetCodeClientOptions = {}
 ): Promise<T> {
-  const { endpoint = LEETCODE_GRAPHQL_ENDPOINT, fetchImpl = fetch } = options;
+  const { endpoint = LEETCODE_GRAPHQL_ENDPOINT, proxyUrl, fetchImpl = fetch } = options;
 
-  const res = await fetchImpl(endpoint, {
+  const [url, body] = proxyUrl
+    ? [proxyUrl, { op, username: variables.username, limit: variables.limit }]
+    : [endpoint, { query, variables }];
+
+  const res = await fetchImpl(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, variables }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
@@ -111,7 +129,7 @@ export async function fetchSolvedSummary(
       submitStats: { acSubmissionNum: { difficulty: string; count: number }[] };
     } | null;
     allQuestionsCount: { difficulty: string; count: number }[];
-  }>(PROFILE_QUERY, { username }, options);
+  }>("summary", PROFILE_QUERY, { username }, options);
 
   if (!data.matchedUser) {
     throw new Error(`No public LeetCode profile found for "${username}".`);
@@ -132,18 +150,31 @@ export async function fetchSolvedSummary(
  * to fill in the `{difficulty}` path segment when committing a solution,
  * since the submission event itself doesn't carry it. Falls back to
  * "Unknown" rather than throwing, since this is a nice-to-have for the
- * commit path, not a blocker. */
+ * commit path, not a blocker. Always calls LeetCode directly (never
+ * through the proxy) — this is only ever used by the extension's
+ * background worker, which has `host_permissions` for leetcode.com and no
+ * CORS restriction to route around, and the proxy doesn't serve this
+ * query anyway (it only knows "summary"/"recent"). */
 export async function fetchQuestionDifficulty(
   slug: string,
-  options?: LeetCodeClientOptions
+  options?: Pick<LeetCodeClientOptions, "endpoint" | "fetchImpl">
 ): Promise<Problem["difficulty"]> {
   try {
-    const data = await graphql<{ question: { difficulty: string } | null }>(
-      QUESTION_DIFFICULTY_QUERY,
-      { titleSlug: slug },
-      options
-    );
-    const difficulty = data.question?.difficulty;
+    const { endpoint = LEETCODE_GRAPHQL_ENDPOINT, fetchImpl = fetch } = options ?? {};
+    const res = await fetchImpl(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: QUESTION_DIFFICULTY_QUERY,
+        variables: { titleSlug: slug },
+      }),
+    });
+    if (!res.ok) throw new Error(`LeetCode API request failed: ${res.status}`);
+
+    const json = (await res.json()) as {
+      data?: { question: { difficulty: string } | null };
+    };
+    const difficulty = json.data?.question?.difficulty;
     if (difficulty === "Easy" || difficulty === "Medium" || difficulty === "Hard") {
       return difficulty;
     }
@@ -169,7 +200,7 @@ export async function fetchRecentAcSubmissions(
       statusDisplay: string;
       lang: string;
     }[];
-  }>(RECENT_SUBMISSIONS_QUERY, { username, limit }, options);
+  }>("recent", RECENT_SUBMISSIONS_QUERY, { username, limit }, options);
 
   return data.recentAcSubmissionList.map((entry) => ({
     title: entry.title,

@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { SolvedProblem, Target } from "@leettarget/shared";
 import { isSupabaseConfigured, supabase } from "./lib/supabaseClient.js";
-import { listSolvedProblems, listTargets } from "./lib/api.js";
+import { deleteTarget, listSolvedProblems, listTargets } from "./lib/api.js";
 import { CsvUploader } from "./components/CsvUploader.js";
+import { ImportLeetCode } from "./components/ImportLeetCode.js";
 import { AddTargetForm } from "./components/AddTargetForm.js";
 import { RepoMappingForm } from "./components/RepoMappingForm.js";
 import { TargetsTable } from "./components/TargetsTable.js";
@@ -89,6 +90,15 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
     refresh();
   }, [refresh]);
 
+  async function handleRemove(id: string) {
+    try {
+      await deleteTarget(id);
+      refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl p-6">
       <header className="flex items-center justify-between">
@@ -119,6 +129,7 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
         {tab === "dashboard" && (
           <>
             <ProgressSummary targets={targets} solved={solved} />
+            <ImportLeetCode userId={userId} onImported={refresh} />
             <div>
               <h2 className="mb-2 text-sm font-medium text-slate-700">Recent targets</h2>
               <TargetsTable targets={targets.slice(0, 10)} />
@@ -132,7 +143,7 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
             <CsvUploader userId={userId} onImported={refresh} />
             <div>
               <h2 className="mb-2 text-sm font-medium text-slate-700">All targets</h2>
-              <TargetsTable targets={targets} />
+              <TargetsTable targets={targets} onRemove={handleRemove} />
             </div>
           </>
         )}

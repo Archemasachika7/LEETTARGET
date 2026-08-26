@@ -19,27 +19,41 @@ architecture and phasing live in `Plan.md`. This file is the product intent.
 
 ## Feature checklist (acceptance-level)
 
-- [ ] **Progress fetch**: given a signed-in user (or a LeetCode username),
-      show count of problems solved and the list of which ones.
-- [ ] **GitHub repo mapping**: user provides `owner/repo` (+ branch); system
+- [x] **Progress fetch**: given a signed-in user (or a LeetCode username),
+      show count of problems solved and the list of which ones. (Dashboard
+      reads live `solved_problems`/`targets`; "Import from LeetCode" pulls a
+      username's public counts.)
+- [x] **GitHub repo mapping**: user provides `owner/repo` (+ branch); system
       stores it and can resolve a problem → file path within that repo.
-- [ ] **Solution mapping**: for each solved problem, know (or infer) which
-      file in the repo holds the solution.
-- [ ] **Question mapping**: canonical problem record (title/slug/url/
+      (`RepoMappingForm` on the site, mirrored in the extension's options.)
+- [x] **Solution mapping**: for each solved problem, know (or infer) which
+      file in the repo holds the solution. (`buildSolutionPath` +
+      `solved_problems.github_path`/`commit_sha`.)
+- [x] **Question mapping**: canonical problem record (title/slug/url/
       difficulty) that CSV rows, extension events, and manual entries all
-      resolve to, so the same problem is never duplicated.
-- [ ] **CSV upload → targets**: parse a CSV of `question name, link`
+      resolve to, so the same problem is never duplicated. (`problems`
+      table, upserted by slug from every entry point.)
+- [x] **CSV upload → targets**: parse a CSV of `question name, link`
       (plain URL or Excel `HYPERLINK()` formula) into individual target
-      rows for the user.
-- [ ] **Update map**: re-upload or edit the target list later without
+      rows for the user. (`CsvUploader` + `packages/shared/src/csv.ts`.)
+- [x] **Update map**: re-upload or edit the target list later without
       wiping solve history; already-solved targets stay marked solved.
-- [ ] **Manual add**: add a single target question from the site UI
-      (paste a link or search canonical problems), no CSV required.
-- [ ] **LeetCode API (if free)**: pull profile stats / solved list from
+      (`replaceCsvTargets` only touches pending CSV-sourced rows.)
+- [x] **Manual add**: add a single target question from the site UI
+      (paste a link), no CSV required. (`AddTargetForm`; target deletion is
+      also in — `TargetsTable`'s Remove button.)
+- [x] **LeetCode API (if free)**: pull profile stats / solved list from
       LeetCode's public GraphQL endpoint as a backfill/import option.
-- [ ] **Extension parity with LeetHub**: still commits accepted solutions to
+      (`ImportLeetCode` via the `leetcode-proxy` edge function.)
+- [x] **Extension parity with LeetHub**: still commits accepted solutions to
       the user's GitHub repo, so switching to LeetTarget costs nothing versus
-      using LeetHub alone.
+      using LeetHub alone. (`background.ts` commits to GitHub independent of
+      whether the Supabase sync succeeds.)
+
+All of the above are implemented in code but not yet exercised against a
+live LeetCode submission end-to-end (see `Plan.md`'s M1/M2 status) — the
+scaffolding sandbox this was built in can't reach external hosts to verify
+the full round trip. Next real step is someone running it for real.
 
 ## Explicit non-asks
 
