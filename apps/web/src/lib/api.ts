@@ -538,6 +538,46 @@ export async function getSolvedByDifficulty(userId: string): Promise<DifficultyC
   return counts;
 }
 
+/** Re-resolves difficulty for any of this user's solved problems still
+ * stuck at "Unknown" — self-heals rows created before difficulty
+ * enrichment existed on this import path (or ones a proxy hiccup left
+ * unresolved at the time), instead of leaving the chart's gray bucket
+ * permanently inflated for anyone who solved before this fix shipped.
+ * Returns how many problem rows it actually resolved. */
+export async function backfillUnknownDifficulties(userId: string, proxyUrl: string): Promise<number> {
+  const client = requireClient();
+
+  const { data, error } = await client
+    .from("solved_problems")
+    .select("problem:problems(slug, difficulty)")
+    .eq("user_id", userId)
+    .returns<{ problem: { slug: string; difficulty: string } | null }[]>();
+  if (error) throw error;
+
+  const unknownSlugs = [
+    ...new Set(
+      (data ?? [])
+        .map((row) => row.problem)
+        .filter((p): p is { slug: string; difficulty: string } => p?.difficulty === "Unknown")
+        .map((p) => p.slug)
+    ),
+  ];
+  if (unknownSlugs.length === 0) return 0;
+
+  const proxyApiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const difficultyBySlug = await fetchDifficultiesBatched(unknownSlugs, proxyUrl, proxyApiKey);
+
+  let fixed = 0;
+  for (const slug of unknownSlugs) {
+    const difficulty = difficultyBySlug.get(slug);
+    if (!difficulty || difficulty === "Unknown") continue;
+    const { error: updateError } = await client.from("problems").update({ difficulty }).eq("slug", slug);
+    if (updateError) throw updateError;
+    fixed++;
+  }
+  return fixed;
+}
+
 /** A solved problem with enough of its canonical `problems` row joined in
  * to render + link it — used by the solution-mapping override UI, which
  * needs the title/slug/url that plain `SolvedProblem` doesn't carry. */
