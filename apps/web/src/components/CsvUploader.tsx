@@ -94,7 +94,7 @@ export function CsvUploader({ userId, targets, onImported }: Props) {
       {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {rows.length > 0 && diff && (
-        <div className="mt-4 animate-fade-in">
+        <div className="mt-4">
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Parsed {rows.length} row{rows.length === 1 ? "" : "s"} from{" "}
             <span className="font-medium text-slate-900 dark:text-slate-100">{filename}</span>.

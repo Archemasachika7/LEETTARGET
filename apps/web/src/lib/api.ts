@@ -10,6 +10,7 @@ import type {
 import {
   fetchQuestionDifficulty,
   fetchRecentAcSubmissions,
+  fetchRepoSolvedSlugs,
   fetchSolvedSummary,
   slugFromLeetCodeUrl,
 } from "@leettarget/shared";
@@ -159,6 +160,133 @@ export async function upsertGithubLink(link: GithubLink): Promise<void> {
     path_template: link.pathTemplate,
   });
   if (error) throw error;
+}
+
+export interface GithubSyncResult {
+  /** Repo folder/file names that matched a known slug (already-known
+   * problem, or one of this user's own targets) — the total the repo scan
+   * recognized, whether or not it was already recorded. */
+  matched: number;
+  /** Of those, how many were new `solved_problems` rows this run actually
+   * inserted — existing rows (e.g. one the user already hand-corrected in
+   * the solution mapping table) are left untouched, never overwritten. */
+  newlySynced: number;
+}
+
+/** Backfills solved status from a repo that already has solutions
+ * committed to it (e.g. a LeetHub repo predating LeetTarget) — the
+ * extension and "Import from LeetCode" only ever see solves going
+ * forward/recently, so without this, an existing repo's history never
+ * shows up in solved status or the difficulty chart. Matches folder/file
+ * names in the repo's tree against slugs we already know about (the
+ * `problems` catalog, or this user's own targets) rather than trusting an
+ * arbitrary folder name outright. */
+export async function syncFromGithubRepo(
+  userId: string,
+  link: GithubLink,
+  proxyUrl?: string
+): Promise<GithubSyncResult> {
+  const candidates = await fetchRepoSolvedSlugs({
+    owner: link.owner,
+    repo: link.repo,
+    branch: link.branch,
+  });
+  if (candidates.size === 0) return { matched: 0, newlySynced: 0 };
+
+  const slugs = [...candidates.keys()];
+  const client = requireClient();
+
+  const { data: existingProblems, error: problemsError } = await client
+    .from("problems")
+    .select("id, slug, difficulty")
+    .in("slug", slugs);
+  if (problemsError) throw problemsError;
+
+  const { data: myTargets, error: targetsError } = await client
+    .from("targets")
+    .select("slug, custom_title, custom_url")
+    .eq("user_id", userId)
+    .in("slug", slugs);
+  if (targetsError) throw targetsError;
+
+  const problemBySlug = new Map(
+    (existingProblems ?? []).map((p) => [p.slug as string, { id: p.id as string, difficulty: p.difficulty as string }])
+  );
+  const targetBySlug = new Map(
+    (myTargets ?? []).filter((t) => Boolean(t.slug)).map((t) => [t.slug as string, t])
+  );
+
+  // A bare folder/file name is too uncertain to trust on its own — only
+  // create a new `problems` row for it when it also matches one of this
+  // user's own targets (so we have a real title/url to attach), never for
+  // an arbitrary slug-shaped name that happens to appear in the tree.
+  const newProblemRows = slugs
+    .filter((slug) => !problemBySlug.has(slug) && targetBySlug.has(slug))
+    .map((slug) => {
+      const target = targetBySlug.get(slug)!;
+      return {
+        slug,
+        title: target.custom_title ?? slug,
+        url: target.custom_url ?? `https://leetcode.com/problems/${slug}/`,
+      };
+    });
+
+  if (newProblemRows.length > 0) {
+    const { data: inserted, error: insertError } = await client
+      .from("problems")
+      .upsert(newProblemRows, { onConflict: "slug", ignoreDuplicates: false })
+      .select("id, slug, difficulty");
+    if (insertError) throw insertError;
+    for (const p of inserted ?? []) {
+      problemBySlug.set(p.slug as string, { id: p.id as string, difficulty: p.difficulty as string });
+    }
+  }
+
+  const matchedSlugs = slugs.filter((slug) => problemBySlug.has(slug));
+  if (matchedSlugs.length === 0) return { matched: 0, newlySynced: 0 };
+
+  // Same enrichment as a LeetCode import — otherwise every repo-matched
+  // solve whose problem row was just created above would sit at "Unknown"
+  // forever, and the difficulty chart's gray bucket would only grow.
+  const proxyApiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (proxyUrl) {
+    const unresolvedSlugs = matchedSlugs.filter((slug) => problemBySlug.get(slug)?.difficulty === "Unknown");
+    if (unresolvedSlugs.length > 0) {
+      const difficultyBySlug = await fetchDifficultiesBatched(unresolvedSlugs, proxyUrl, proxyApiKey);
+      for (const slug of unresolvedSlugs) {
+        const difficulty = difficultyBySlug.get(slug);
+        if (!difficulty || difficulty === "Unknown") continue;
+        const { error: updateError } = await client.from("problems").update({ difficulty }).eq("slug", slug);
+        if (updateError) throw updateError;
+      }
+    }
+  }
+
+  const problemIds = matchedSlugs.map((slug) => problemBySlug.get(slug)!.id);
+  const { data: alreadySolved, error: alreadySolvedError } = await client
+    .from("solved_problems")
+    .select("problem_id")
+    .eq("user_id", userId)
+    .in("problem_id", problemIds);
+  if (alreadySolvedError) throw alreadySolvedError;
+  const alreadySolvedIds = new Set((alreadySolved ?? []).map((s) => s.problem_id as string));
+
+  const newSolvedRows = matchedSlugs
+    .filter((slug) => !alreadySolvedIds.has(problemBySlug.get(slug)!.id))
+    .map((slug) => ({
+      user_id: userId,
+      problem_id: problemBySlug.get(slug)!.id,
+      github_path: candidates.get(slug),
+    }));
+
+  if (newSolvedRows.length > 0) {
+    const { error: solvedError } = await client.from("solved_problems").insert(newSolvedRows);
+    if (solvedError) throw solvedError;
+  }
+
+  await markAlreadySolvedTargetsDone(client, userId, matchedSlugs);
+
+  return { matched: matchedSlugs.length, newlySynced: newSolvedRows.length };
 }
 
 // --- profile ---------------------------------------------------------------

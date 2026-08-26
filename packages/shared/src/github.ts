@@ -60,6 +60,77 @@ export function buildSolutionPath(
 
 export const DEFAULT_PATH_TEMPLATE = "{difficulty}/{slug}";
 
+interface GithubTreeEntry {
+  path: string;
+  type: "blob" | "tree" | "commit";
+}
+
+const SKIP_BASENAMES = new Set(["readme", "notes", "solution", "index", "stats", "license"]);
+
+/** Turns one path segment (a folder or file name) into a candidate LeetCode
+ * slug, or undefined if it clearly isn't one — strips the file extension
+ * and LeetHub's common leading problem-number prefix ("1750-", "1750.",
+ * "1750_"), then normalizes to lowercase-with-dashes. Best-effort: this
+ * can't tell a real slug from an unrelated folder name, so callers only
+ * trust a candidate that also matches something already known (the
+ * `problems` catalog or one of the user's own targets). */
+function candidateSlugFromSegment(segment: string): string | undefined {
+  const withoutExtension = segment.replace(/\.[a-z0-9]+$/i, "");
+  const withoutNumberPrefix = withoutExtension.replace(/^\d+[-._\s]+/, "");
+  const normalized = withoutNumberPrefix
+    .toLowerCase()
+    .trim()
+    .replace(/[_\s]+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  if (!normalized || normalized.length < 2 || SKIP_BASENAMES.has(normalized)) return undefined;
+  return normalized;
+}
+
+/** Best-effort match of a mapped GitHub repo's existing folder/file names
+ * back to LeetCode slugs, so a repo that already has solutions committed
+ * (e.g. from LeetHub, before LeetTarget existed) can be backfilled instead
+ * of only tracking solves going forward. Not tied to one exact LeetHub
+ * layout: prefers folder names (the more reliable signal when a repo nests
+ * each solution in its own directory — "1750-two-sum/solution.py") and
+ * falls back to file basenames for flatter repos. Returns a map of
+ * slug -> the file path to record as that solve's `github_path`. */
+export async function fetchRepoSolvedSlugs(
+  ref: Required<GithubRepoRef>,
+  fetchImpl: typeof fetch = fetch
+): Promise<Map<string, string>> {
+  const res = await fetchImpl(
+    `https://api.github.com/repos/${ref.owner}/${ref.repo}/git/trees/${encodeURIComponent(ref.branch)}?recursive=1`
+  );
+  if (!res.ok) {
+    throw new Error(`Failed to read ${ref.owner}/${ref.repo}'s file tree: ${res.status}`);
+  }
+  const json = (await res.json()) as { tree?: GithubTreeEntry[] };
+  const entries = json.tree ?? [];
+  const blobs = entries.filter((e) => e.type === "blob");
+  const dirs = entries.filter((e) => e.type === "tree");
+
+  const result = new Map<string, string>();
+
+  for (const dir of dirs) {
+    const segment = dir.path.split("/").pop()!;
+    const slug = candidateSlugFromSegment(segment);
+    if (!slug || result.has(slug)) continue;
+    const child = blobs.find((b) => b.path.startsWith(`${dir.path}/`));
+    if (child) result.set(slug, child.path);
+  }
+
+  for (const blob of blobs) {
+    const segment = blob.path.split("/").pop()!;
+    const slug = candidateSlugFromSegment(segment);
+    if (!slug || result.has(slug)) continue;
+    result.set(slug, blob.path);
+  }
+
+  return result;
+}
+
 interface GithubFile {
   sha: string;
   content: string;

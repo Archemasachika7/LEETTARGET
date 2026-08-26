@@ -110,7 +110,7 @@ export function ImportLeetCode({ userId, onImported }: Props) {
 
       {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
       {result && (
-        <p className="mt-2 text-sm text-green-700 animate-fade-in dark:text-green-400">
+        <p className="mt-2 text-sm text-green-700 dark:text-green-400">
           {result.summary.totalSolved} solved on LeetCode ({result.summary.easySolved}E /{" "}
           {result.summary.mediumSolved}M / {result.summary.hardSolved}H) — synced {result.imported} recent
           solve{result.imported === 1 ? "" : "s"}.
