@@ -122,9 +122,10 @@ export async function importFromLeetCode(
   username: string,
   proxyUrl: string
 ): Promise<LeetCodeImportResult> {
+  const proxyApiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const [summary, recent] = await Promise.all([
-    fetchSolvedSummary(username, { proxyUrl }),
-    fetchRecentAcSubmissions(username, 100, { proxyUrl }),
+    fetchSolvedSummary(username, { proxyUrl, proxyApiKey }),
+    fetchRecentAcSubmissions(username, 100, { proxyUrl, proxyApiKey }),
   ]);
 
   // A successful manual import enrolls the user in the daily auto-import —

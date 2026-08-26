@@ -76,6 +76,12 @@ export interface LeetCodeClientOptions {
    * worker has `host_permissions` for leetcode.com and can call
    * `endpoint` directly). */
   proxyUrl?: string;
+  /** Required alongside `proxyUrl` — Supabase's Edge Function gateway
+   * rejects any invocation with a bare 401 before it even reaches the
+   * function code unless the request carries a valid `apikey`/
+   * `Authorization` header. The project's anon key satisfies this (it's
+   * meant to be used client-side); it isn't a per-user credential. */
+  proxyApiKey?: string;
   fetchImpl?: typeof fetch;
 }
 
@@ -85,7 +91,7 @@ async function graphql<T>(
   variables: Record<string, unknown>,
   options: LeetCodeClientOptions = {}
 ): Promise<T> {
-  const { endpoint = LEETCODE_GRAPHQL_ENDPOINT, proxyUrl, fetchImpl = fetch } = options;
+  const { endpoint = LEETCODE_GRAPHQL_ENDPOINT, proxyUrl, proxyApiKey, fetchImpl = fetch } = options;
 
   const [url, body] = proxyUrl
     ? [proxyUrl, { op, username: variables.username, limit: variables.limit }]
@@ -93,7 +99,12 @@ async function graphql<T>(
 
   const res = await fetchImpl(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(proxyUrl && proxyApiKey
+        ? { apikey: proxyApiKey, Authorization: `Bearer ${proxyApiKey}` }
+        : {}),
+    },
     body: JSON.stringify(body),
   });
 
