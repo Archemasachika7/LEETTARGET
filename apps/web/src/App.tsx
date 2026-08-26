@@ -10,6 +10,7 @@ import { RepoMappingForm } from "./components/RepoMappingForm.js";
 import { TargetsTable } from "./components/TargetsTable.js";
 import { ProgressSummary } from "./components/ProgressSummary.js";
 import { DifficultyBreakdown } from "./components/DifficultyBreakdown.js";
+import { SolutionMappingTable } from "./components/SolutionMappingTable.js";
 
 export default function App() {
   if (!isSupabaseConfigured || !supabase) {
@@ -70,7 +71,7 @@ function SignInScreen({ supabase }: { supabase: SupabaseClient }) {
   );
 }
 
-type Tab = "dashboard" | "targets" | "repo";
+type Tab = "dashboard" | "targets" | "solved" | "repo";
 
 function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -112,7 +113,7 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
       </header>
 
       <nav className="mt-6 flex gap-4 border-b border-slate-200 text-sm">
-        {(["dashboard", "targets", "repo"] as const).map((t) => (
+        {(["dashboard", "targets", "solved", "repo"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -121,7 +122,13 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
               (tab === t ? "border-slate-900 font-medium text-slate-900" : "border-transparent text-slate-500")
             }
           >
-            {t === "dashboard" ? "Dashboard" : t === "targets" ? "Targets" : "Repo mapping"}
+            {t === "dashboard"
+              ? "Dashboard"
+              : t === "targets"
+                ? "Targets"
+                : t === "solved"
+                  ? "Solved"
+                  : "Repo mapping"}
           </button>
         ))}
       </nav>
@@ -150,6 +157,16 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
               <TargetsTable targets={targets} onRemove={handleRemove} />
             </div>
           </>
+        )}
+
+        {tab === "solved" && (
+          <div>
+            <h2 className="mb-2 text-sm font-medium text-slate-700">Solved problems &amp; solution mapping</h2>
+            <p className="mb-3 text-sm text-slate-500">
+              Where LeetTarget thinks each solution lives in your repo — correct it if the guess is wrong.
+            </p>
+            <SolutionMappingTable userId={userId} refreshKey={refreshTick} />
+          </div>
         )}
 
         {tab === "repo" && <RepoMappingForm userId={userId} />}

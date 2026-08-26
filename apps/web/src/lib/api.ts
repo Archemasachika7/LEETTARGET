@@ -232,6 +232,63 @@ export async function getSolvedByDifficulty(userId: string): Promise<DifficultyC
   return counts;
 }
 
+/** A solved problem with enough of its canonical `problems` row joined in
+ * to render + link it — used by the solution-mapping override UI, which
+ * needs the title/slug/url that plain `SolvedProblem` doesn't carry. */
+export interface SolvedWithProblem {
+  id: string;
+  problemTitle: string;
+  problemSlug: string;
+  problemUrl: string;
+  difficulty: Problem["difficulty"];
+  language?: string;
+  githubPath?: string;
+  solvedAt: string;
+}
+
+export async function listSolvedWithProblems(userId: string): Promise<SolvedWithProblem[]> {
+  // See getSolvedByDifficulty for why `.returns<T>()` is needed here.
+  const { data, error } = await requireClient()
+    .from("solved_problems")
+    .select("id, language, github_path, solved_at, problem:problems(title, slug, url, difficulty)")
+    .eq("user_id", userId)
+    .order("solved_at", { ascending: false })
+    .returns<
+      {
+        id: string;
+        language: string | null;
+        github_path: string | null;
+        solved_at: string;
+        problem: { title: string; slug: string; url: string; difficulty: string } | null;
+      }[]
+    >();
+  if (error) throw error;
+
+  return (data ?? [])
+    .filter((row) => row.problem !== null)
+    .map((row) => ({
+      id: row.id,
+      problemTitle: row.problem!.title,
+      problemSlug: row.problem!.slug,
+      problemUrl: row.problem!.url,
+      difficulty: row.problem!.difficulty as Problem["difficulty"],
+      language: row.language ?? undefined,
+      githubPath: row.github_path ?? undefined,
+      solvedAt: row.solved_at,
+    }));
+}
+
+/** Overrides the GitHub path LeetTarget associates with a solve — for when
+ * the auto-detected `{difficulty}/{slug}` guess (see `buildSolutionPath`)
+ * doesn't match how the repo is actually laid out. */
+export async function updateSolvedGithubPath(id: string, githubPath: string): Promise<void> {
+  const { error } = await requireClient()
+    .from("solved_problems")
+    .update({ github_path: githubPath })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 // --- row <-> type mapping (snake_case DB columns -> camelCase types) -----
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

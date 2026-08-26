@@ -141,10 +141,12 @@ join key against `problems`.
   `solved_problems` and marks matching targets done. Still needs
   `supabase functions deploy leetcode-proxy` and `VITE_LEETCODE_PROXY_URL`
   set before it does anything (the UI hides itself until then).
-- **M3 — Polish** (partial): target deletion is in (`TargetsTable`'s Remove
-  button). Still open: solution-file mapping override UI, CSV re-upload
-  diff view (currently silent replace, no preview of what changed),
-  stats/progress charts.
+- **M3 — Polish** (done): target deletion (`TargetsTable`'s Remove button),
+  CSV re-upload diff preview (`CsvUploader` shows added/removed/unchanged
+  before saving), a solved-by-difficulty progress chart
+  (`DifficultyBreakdown`), and a solution-file mapping override UI (the
+  "Solved" tab's `SolutionMappingTable` — corrects a wrong auto-detected
+  GitHub path per solve) are all in.
 - **M4 — Ship**: packaged extension (Chrome Web Store listing), hosted site.
 
 ## 8. Open questions (need a decision before M1/M2)
