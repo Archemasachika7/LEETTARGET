@@ -96,11 +96,23 @@ async function importOne(
   const recent = await fetchRecentSubmissions(profile.username);
   if (recent.length === 0) return 0;
 
+  // LeetCode's recent-submissions list can name the same problem twice
+  // (resubmitted, or solved in more than one language), and a single
+  // upsert batch can't target the same on_conflict row twice — Postgres
+  // rejects the whole statement with "ON CONFLICT DO UPDATE command
+  // cannot affect row a second time". Keep the first (most recent, since
+  // the API returns newest-first) occurrence per slug.
+  const uniqueBySlug = new Map<string, RecentSubmission>();
+  for (const r of recent) {
+    if (!uniqueBySlug.has(r.titleSlug)) uniqueBySlug.set(r.titleSlug, r);
+  }
+  const uniqueRecent = [...uniqueBySlug.values()];
+
   const problemRes = await fetch(`${supabaseUrl}/rest/v1/problems?on_conflict=slug`, {
     method: "POST",
     headers: { ...headers, Prefer: "resolution=merge-duplicates,return=representation" },
     body: JSON.stringify(
-      recent.map((r) => ({
+      uniqueRecent.map((r) => ({
         slug: r.titleSlug,
         title: r.title,
         url: `https://leetcode.com/problems/${r.titleSlug}/`,
@@ -112,7 +124,7 @@ async function importOne(
   const problems = (await problemRes.json()) as { id: string; slug: string }[];
   const problemIdBySlug = new Map(problems.map((p) => [p.slug, p.id]));
 
-  const solvedRows = recent
+  const solvedRows = uniqueRecent
     .filter((r) => problemIdBySlug.has(r.titleSlug))
     .map((r) => ({
       user_id: profile.user_id,
@@ -128,14 +140,14 @@ async function importOne(
   });
   if (!solvedRes.ok) throw new Error(`solved_problems upsert failed: ${solvedRes.status}`);
 
-  const slugList = recent.map((r) => r.titleSlug).join(",");
+  const slugList = uniqueRecent.map((r) => r.titleSlug).join(",");
   const targetRes = await fetch(
     `${supabaseUrl}/rest/v1/targets?user_id=eq.${profile.user_id}&slug=in.(${slugList})`,
     { method: "PATCH", headers, body: JSON.stringify({ status: "done" }) }
   );
   if (!targetRes.ok) throw new Error(`targets update failed: ${targetRes.status}`);
 
-  return recent.length;
+  return uniqueRecent.length;
 }
 
 async function fetchRecentSubmissions(username: string): Promise<RecentSubmission[]> {

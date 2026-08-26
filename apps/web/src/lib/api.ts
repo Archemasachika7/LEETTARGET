@@ -139,12 +139,24 @@ export async function importFromLeetCode(
     return { summary, imported: 0 };
   }
 
+  // LeetCode's recent-submissions list can name the same problem twice —
+  // resubmitted, or solved in more than one language — and a single
+  // upsert batch can't target the same on_conflict row twice (Postgres
+  // rejects the whole statement: "ON CONFLICT DO UPDATE command cannot
+  // affect row a second time"). Keep the first (most recent, since the
+  // API returns newest-first) occurrence per slug.
+  const uniqueBySlug = new Map<string, (typeof recent)[number]>();
+  for (const r of recent) {
+    if (!uniqueBySlug.has(r.slug)) uniqueBySlug.set(r.slug, r);
+  }
+  const uniqueRecent = [...uniqueBySlug.values()];
+
   const client = requireClient();
 
   const { data: problemRows, error: problemError } = await client
     .from("problems")
     .upsert(
-      recent.map((r) => ({
+      uniqueRecent.map((r) => ({
         slug: r.slug,
         title: r.title,
         url: `https://leetcode.com/problems/${r.slug}/`,
@@ -160,7 +172,7 @@ export async function importFromLeetCode(
   const problemIdBySlug = new Map((problemRows ?? []).map((p) => [p.slug as string, p.id as string]));
 
   const { error: solvedError } = await client.from("solved_problems").upsert(
-    recent
+    uniqueRecent
       .filter((r) => problemIdBySlug.has(r.slug))
       .map((r) => ({
         user_id: userId,
@@ -179,11 +191,11 @@ export async function importFromLeetCode(
     .eq("user_id", userId)
     .in(
       "slug",
-      recent.map((r) => r.slug)
+      uniqueRecent.map((r) => r.slug)
     );
   if (targetError) throw targetError;
 
-  return { summary, imported: recent.length };
+  return { summary, imported: uniqueRecent.length };
 }
 
 /** The username the daily-import edge function auto-imports for this user
