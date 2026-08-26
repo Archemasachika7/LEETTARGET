@@ -140,7 +140,7 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
         {tab === "targets" && (
           <>
             <AddTargetForm userId={userId} onAdded={refresh} />
-            <CsvUploader userId={userId} onImported={refresh} />
+            <CsvUploader userId={userId} targets={targets} onImported={refresh} />
             <div>
               <h2 className="mb-2 text-sm font-medium text-slate-700">All targets</h2>
               <TargetsTable targets={targets} onRemove={handleRemove} />
