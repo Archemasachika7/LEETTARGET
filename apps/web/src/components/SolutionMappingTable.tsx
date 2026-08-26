@@ -1,0 +1,133 @@
+import { useEffect, useState } from "react";
+import { buildSolutionPath, DEFAULT_PATH_TEMPLATE, type GithubLink } from "@leettarget/shared";
+import {
+  getGithubLink,
+  listSolvedWithProblems,
+  updateSolvedGithubPath,
+  type SolvedWithProblem,
+} from "../lib/api.js";
+
+interface Props {
+  userId: string;
+  refreshKey: number;
+}
+
+function githubFileUrl(link: GithubLink | undefined, path: string): string | undefined {
+  if (!link || !path) return undefined;
+  return `https://github.com/${link.owner}/${link.repo}/blob/${link.branch}/${path}`;
+}
+
+/** Lets the user see (and correct) the GitHub file path LeetTarget
+ * associates with each solve. The extension records the real path it
+ * committed to when it can, but for solves without one (a LeetCode import,
+ * or a repo that doesn't follow the `{difficulty}/{slug}` guess) this is
+ * where that gets fixed by hand. */
+export function SolutionMappingTable({ userId, refreshKey }: Props) {
+  const [rows, setRows] = useState<SolvedWithProblem[]>();
+  const [githubLink, setGithubLink] = useState<GithubLink>();
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string>();
+  const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    Promise.all([listSolvedWithProblems(userId), getGithubLink(userId)])
+      .then(([solved, link]) => {
+        setRows(solved);
+        setGithubLink(link);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+  }, [userId, refreshKey]);
+
+  async function handleSave(id: string) {
+    const path = (drafts[id] ?? "").trim();
+    if (!path) return;
+    setSavingId(id);
+    setError(undefined);
+    try {
+      await updateSolvedGithubPath(id, path);
+      setRows((prev) => prev?.map((r) => (r.id === id ? { ...r, githubPath: path } : r)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSavingId(undefined);
+    }
+  }
+
+  if (error) return <p className="text-sm text-red-600">{error}</p>;
+  if (!rows) return null;
+
+  if (rows.length === 0) {
+    return (
+      <p className="text-sm text-slate-500">
+        No solves yet — this fills in once a solve syncs from the extension or an import.
+      </p>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-200 bg-slate-50 text-left text-slate-500">
+            <th className="px-3 py-2 font-medium">Problem</th>
+            <th className="px-3 py-2 font-medium">Language</th>
+            <th className="px-3 py-2 font-medium">GitHub path</th>
+            <th className="px-3 py-2 font-medium" />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const suggested = buildSolutionPath(
+              githubLink?.pathTemplate ?? DEFAULT_PATH_TEMPLATE,
+              { slug: row.problemSlug, difficulty: row.difficulty },
+              row.language ?? "unknown"
+            );
+            const draft = drafts[row.id] ?? row.githubPath ?? "";
+            const fileUrl = githubFileUrl(githubLink, row.githubPath ?? "");
+
+            return (
+              <tr key={row.id} className="border-b border-slate-100 last:border-0">
+                <td className="px-3 py-2">
+                  <a
+                    href={row.problemUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    {row.problemTitle}
+                  </a>
+                  <div className="text-xs text-slate-400">{row.difficulty}</div>
+                </td>
+                <td className="px-3 py-2 text-slate-500">{row.language ?? "—"}</td>
+                <td className="px-3 py-2">
+                  <input
+                    value={draft}
+                    placeholder={suggested}
+                    onChange={(e) => setDrafts((d) => ({ ...d, [row.id]: e.target.value }))}
+                    className="w-full min-w-[16rem] rounded border border-slate-300 px-2 py-1 text-sm"
+                  />
+                </td>
+                <td className="px-3 py-2 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    {fileUrl && (
+                      <a href={fileUrl} target="_blank" rel="noreferrer" className="text-xs text-slate-400 hover:text-blue-600">
+                        View
+                      </a>
+                    )}
+                    <button
+                      onClick={() => handleSave(row.id)}
+                      disabled={savingId === row.id || !draft.trim() || draft === row.githubPath}
+                      className="rounded bg-slate-900 px-2 py-1 text-xs font-medium text-white disabled:opacity-40"
+                    >
+                      {savingId === row.id ? "Saving..." : "Save"}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
