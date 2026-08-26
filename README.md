@@ -77,13 +77,36 @@ Apply the schema in `supabase/migrations/0001_init.sql` to your Supabase
 project (`supabase db push` from the Supabase CLI, or paste it into the SQL
 editor). See `supabase/README.md` for the edge function deploy steps.
 
+## Deploying the site (Vercel)
+
+`apps/web` is a static Vite build with no server-side code of its own (auth,
+DB, and the LeetCode proxy all live in Supabase), so a static host works
+fine — Vercel's free tier is a reasonable default:
+
+1. Import the repo in Vercel and set **Root Directory** to `apps/web`. This
+   repo is an npm-workspaces monorepo — `apps/web/vercel.json` explicitly
+   `cd`s to the repo root for install/build so the `@leettarget/shared`
+   workspace link resolves correctly, independent of Vercel's monorepo
+   auto-detection.
+2. Add the environment variables from `apps/web/.env.example`
+   (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and optionally
+   `VITE_LEETCODE_PROXY_URL`) in the Vercel project's Settings →
+   Environment Variables.
+3. Deploy. Once you have the `*.vercel.app` URL (or a custom domain), add it
+   to your Supabase project's **Authentication → URL Configuration** (Site
+   URL / Redirect URLs) — same requirement as `http://localhost:5173` for
+   local dev, just for the deployed origin. Skipping this step is the most
+   common way GitHub sign-in silently fails post-deploy.
+
 ## Project status
 
-Early scaffold — core structure, types, CSV parsing, and the extension's
-submission-detection + GitHub-commit path are in place. Live Supabase wiring
-and the LeetCode API backfill are next; track progress against
-[`PROMPT.md`](./PROMPT.md)'s checklist and [`Plan.md`](./Plan.md)'s
-milestones.
+Core structure, the CSV/GitHub/LeetCode clients, and the extension's
+submission-detection + GitHub-commit path are in place. GitHub OAuth and the
+schema are live against a real Supabase project; "Import from LeetCode" is
+code-complete but needs `leetcode-proxy` deployed to do anything. Not yet
+exercised end-to-end: a real extension solve syncing to that project, and a
+production deploy. Track progress against [`PROMPT.md`](./PROMPT.md)'s
+checklist and [`Plan.md`](./Plan.md)'s milestones.
 
 ## License
 
