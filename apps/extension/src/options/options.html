@@ -10,7 +10,10 @@
       label { display: block; margin: 8px 0 4px; font-size: 12px; color: #475569; }
       input { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
       button { margin-top: 12px; padding: 8px 14px; background: #0f172a; color: white; border: none; border-radius: 4px; cursor: pointer; }
-      #status { margin-top: 8px; font-size: 12px; }
+      button.secondary { background: white; color: #0f172a; border: 1px solid #cbd5e1; }
+      textarea { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: monospace; font-size: 11px; }
+      #status, #setupStatus { margin-top: 8px; font-size: 12px; }
+      details summary { cursor: pointer; font-size: 12px; color: #475569; margin-top: 4px; }
     </style>
   </head>
   <body>
@@ -32,14 +35,25 @@
 
     <fieldset>
       <legend>LeetTarget sync (optional)</legend>
-      <label for="supabaseUrl">Supabase URL</label>
-      <input id="supabaseUrl" placeholder="https://your-project.supabase.co" />
-      <label for="supabaseAnonKey">Supabase anon key</label>
-      <input id="supabaseAnonKey" type="password" />
-      <label for="leetTargetUserId">LeetTarget user id</label>
-      <input id="leetTargetUserId" />
-      <label for="supabaseAccessToken">Access token (from the site's "Extension setup" page)</label>
-      <input id="supabaseAccessToken" type="password" />
+
+      <label for="setupCode">Paste setup code from the site's "Repo mapping" tab</label>
+      <textarea id="setupCode" rows="6" placeholder='{ "supabaseUrl": ... }'></textarea>
+      <button id="applySetup" class="secondary" type="button">Apply setup code</button>
+      <div id="setupStatus"></div>
+
+      <details>
+        <summary>Or fill in manually</summary>
+        <label for="supabaseUrl">Supabase URL</label>
+        <input id="supabaseUrl" placeholder="https://your-project.supabase.co" />
+        <label for="supabaseAnonKey">Supabase anon key</label>
+        <input id="supabaseAnonKey" type="password" />
+        <label for="leetTargetUserId">LeetTarget user id</label>
+        <input id="leetTargetUserId" />
+        <label for="supabaseAccessToken">Access token</label>
+        <input id="supabaseAccessToken" type="password" />
+        <label for="supabaseRefreshToken">Refresh token</label>
+        <input id="supabaseRefreshToken" type="password" />
+      </details>
     </fieldset>
 
     <button id="save">Save</button>

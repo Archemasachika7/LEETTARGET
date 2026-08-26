@@ -127,6 +127,13 @@ export async function importFromLeetCode(
     fetchRecentAcSubmissions(username, 100, { proxyUrl }),
   ]);
 
+  // A successful manual import enrolls the user in the daily auto-import —
+  // one less thing to set up separately. Best-effort: a failure here
+  // shouldn't undo the import that already succeeded above.
+  setLeetCodeUsername(userId, username).catch((err) =>
+    console.warn("Failed to remember LeetCode username for auto-import:", err)
+  );
+
   if (recent.length === 0) {
     return { summary, imported: 0 };
   }
@@ -176,6 +183,27 @@ export async function importFromLeetCode(
   if (targetError) throw targetError;
 
   return { summary, imported: recent.length };
+}
+
+/** The username the daily-import edge function auto-imports for this user
+ * at 9pm IST (see `supabase/functions/daily-import` and the pg_cron
+ * schedule documented in `supabase/README.md`). Set automatically by a
+ * successful manual import; also settable directly. */
+export async function getLeetCodeUsername(userId: string): Promise<string | undefined> {
+  const { data, error } = await requireClient()
+    .from("leetcode_profiles")
+    .select("username")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.username ?? undefined;
+}
+
+export async function setLeetCodeUsername(userId: string, username: string): Promise<void> {
+  const { error } = await requireClient()
+    .from("leetcode_profiles")
+    .upsert({ user_id: userId, username, updated_at: new Date().toISOString() });
+  if (error) throw error;
 }
 
 // --- solved problems -----------------------------------------------------

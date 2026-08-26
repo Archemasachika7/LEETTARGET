@@ -131,16 +131,25 @@ join key against `problems`.
   with CSV upload + manual add + repo mapping UI.
 - **M1 — Auth & sync** (mostly done): GitHub OAuth is live and confirmed
   working end-to-end on a real deployed site (sign-in, dashboard render,
-  all tabs) against a real Supabase project. Not yet exercised: an actual
-  extension-to-Supabase solve sync against that project (needs a real
-  LeetCode submission + a copied access token — see
-  `apps/extension/README.md`).
+  all tabs) against a real Supabase project. The extension's Supabase sync
+  self-refreshes its access token now (site's "Repo mapping" tab has an
+  "Extension setup" section generating a one-paste setup code with both an
+  access and refresh token, plus the repo mapping) rather than breaking
+  after Supabase's ~1hr token expiry. Not yet exercised: an actual
+  extension-to-Supabase solve sync against a real project (needs a real
+  LeetCode submission — see `apps/extension/README.md`).
 - **M2 — LeetCode API backfill** (code done, not deployed): `leetcode-proxy`
   edge function, proxy-aware `packages/shared/src/leetcode.ts`, and an
   "Import from LeetCode" button on the dashboard that upserts `problems`/
   `solved_problems` and marks matching targets done. Still needs
   `supabase functions deploy leetcode-proxy` and `VITE_LEETCODE_PROXY_URL`
-  set before it does anything (the UI hides itself until then).
+  set before it does anything (the UI hides itself until then). Also now
+  has a scheduled variant — `daily-import` (a `pg_cron`-triggered edge
+  function using the service role key) auto-imports every enrolled user's
+  recent solves once a day (9pm IST by default), so it doesn't rely on
+  someone remembering to click Import. A manual import enrolls the
+  username automatically (`leetcode_profiles`). Needs its own deploy +
+  `pg_cron`/`pg_net` schedule, documented in `supabase/README.md`.
 - **M3 — Polish** (done): target deletion (`TargetsTable`'s Remove button),
   CSV re-upload diff preview (`CsvUploader` shows added/removed/unchanged
   before saving), a solved-by-difficulty progress chart
