@@ -103,6 +103,20 @@ export async function fetchRepoSolvedSlugs(
   const res = await fetchImpl(
     `https://api.github.com/repos/${ref.owner}/${ref.repo}/git/trees/${encodeURIComponent(ref.branch)}?recursive=1`
   );
+  if (res.status === 404) {
+    // The GitHub API returns 404 (not 403) both when a repo genuinely
+    // doesn't exist and when it's private and this unauthenticated
+    // request can't see it — it doesn't distinguish, on purpose, so
+    // neither can this message. Also the most common cause for anyone
+    // pasting a real repo: the saved branch name isn't the repo's actual
+    // default branch (e.g. "main" saved for a repo whose default is
+    // "master").
+    throw new Error(
+      `Couldn't find "${ref.owner}/${ref.repo}" on branch "${ref.branch}". Double-check the owner/repo ` +
+        `spelling, that the repo is public (this runs without a GitHub token), and that "${ref.branch}" ` +
+        `matches the repo's actual default branch on GitHub.`
+    );
+  }
   if (!res.ok) {
     throw new Error(`Failed to read ${ref.owner}/${ref.repo}'s file tree: ${res.status}`);
   }

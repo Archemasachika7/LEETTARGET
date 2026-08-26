@@ -1,6 +1,7 @@
 import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState } from "react";
-import { getSolvedByDifficulty, type DifficultyCounts } from "../lib/api.js";
+import { backfillUnknownDifficulties, getSolvedByDifficulty, type DifficultyCounts } from "../lib/api.js";
+import { leetCodeProxyUrl } from "../lib/leetcodeConfig.js";
 
 interface Props {
   userId: string;
@@ -30,9 +31,33 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
   const [error, setError] = useState<string>();
 
   useEffect(() => {
+    let cancelled = false;
+
     getSolvedByDifficulty(userId)
-      .then(setCounts)
+      .then(async (initial) => {
+        if (cancelled) return;
+        setCounts(initial);
+
+        // Self-heal: some solved problems may be stuck at "Unknown" from
+        // before difficulty enrichment existed on this import path. Fix
+        // them quietly in the background and refresh once done, rather
+        // than leaving the gray "Unresolved" bucket permanently inflated.
+        if (initial.unknown > 0 && leetCodeProxyUrl) {
+          try {
+            const fixed = await backfillUnknownDifficulties(userId, leetCodeProxyUrl);
+            if (!cancelled && fixed > 0) {
+              setCounts(await getSolvedByDifficulty(userId));
+            }
+          } catch {
+            // best-effort — leave the chart showing what it already has
+          }
+        }
+      })
       .catch((err) => setError(getErrorMessage(err)));
+
+    return () => {
+      cancelled = true;
+    };
   }, [userId, refreshKey]);
 
   if (error) return <p className="text-sm text-red-600">{error}</p>;
