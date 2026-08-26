@@ -93,7 +93,7 @@ function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }
   );
 }
 
-type Tab = "dashboard" | "targets" | "solved" | "repo";
+type Tab = "dashboard" | "targets" | "solved" | "settings";
 
 function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -147,7 +147,7 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
         </header>
 
         <nav className="mt-6 flex gap-4 border-b border-slate-200 text-sm dark:border-slate-700">
-          {(["dashboard", "targets", "solved", "repo"] as const).map((t) => (
+          {(["dashboard", "targets", "solved", "settings"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -164,20 +164,16 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
                   ? "Targets"
                   : t === "solved"
                     ? "Solved"
-                    : "Repo mapping"}
+                    : "Settings"}
             </button>
           ))}
         </nav>
 
         {error && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-        {/* `key={tab}` remounts this on every tab switch, which restarts the
-         * fade-in animation — a small, one-shot cue that the view changed,
-         * not a persistent motion effect. */}
-        <div key={tab} className="mt-6 flex flex-col gap-6 animate-fade-in">
+        <div className="mt-6 flex flex-col gap-6">
           {tab === "dashboard" && (
             <>
-              <ProfileForm userId={userId} />
               <ProgressSummary targets={targets} solved={solved} />
               <DifficultyBreakdown userId={userId} refreshKey={refreshTick} />
               <ImportLeetCode userId={userId} onImported={refresh} />
@@ -211,9 +207,10 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
             </div>
           )}
 
-          {tab === "repo" && (
+          {tab === "settings" && (
             <>
-              <RepoMappingForm userId={userId} />
+              <ProfileForm userId={userId} />
+              <RepoMappingForm userId={userId} onSynced={refresh} />
               <ExtensionSetup userId={userId} />
             </>
           )}

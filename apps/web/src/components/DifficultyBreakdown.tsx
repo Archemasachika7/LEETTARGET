@@ -64,7 +64,7 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
                 <div
                   key={s.key}
                   title={`${s.label}: ${s.count} solved`}
-                  className="transition-[width] duration-700 ease-calm"
+                  className="transition-[width] duration-300 ease-out"
                   style={{
                     width: `${(s.count / total) * 100}%`,
                     backgroundColor: TIER_COLORS[s.key],

@@ -1,7 +1,7 @@
 import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import type { Profile } from "@leettarget/shared";
-import { getProfile, upsertProfileBio, uploadAvatar } from "../lib/api.js";
+import { getLeetCodeUsername, getProfile, upsertProfileBio, uploadAvatar } from "../lib/api.js";
 
 interface Props {
   userId: string;
@@ -9,12 +9,16 @@ interface Props {
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
-/** Avatar + bio shown at the top of the dashboard. Both are optional and
+/** Avatar + bio, shown on the Settings tab. Both are optional and
  * independent — uploading a photo doesn't require a bio and vice versa,
- * each saves on its own. */
+ * each saves on its own. Also surfaces the linked LeetCode username
+ * read-only, as an at-a-glance "this is who's signed in" — it's actually
+ * set/changed from the Dashboard's "Import from LeetCode" section, so
+ * there's one place that owns that flow rather than two. */
 export function ProfileForm({ userId }: Props) {
   const [profile, setProfile] = useState<Profile>();
   const [bio, setBio] = useState("");
+  const [leetCodeUsername, setLeetCodeUsernameDisplay] = useState<string>();
   const [uploading, setUploading] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
   const [error, setError] = useState<string>();
@@ -27,6 +31,9 @@ export function ProfileForm({ userId }: Props) {
         setBio(p?.bio ?? "");
       })
       .catch((err) => setError(getErrorMessage(err)));
+    getLeetCodeUsername(userId)
+      .then(setLeetCodeUsernameDisplay)
+      .catch(() => {}); // non-critical — just skips the display line
   }, [userId]);
 
   async function handleAvatarChange(e: ChangeEvent<HTMLInputElement>) {
@@ -73,6 +80,14 @@ export function ProfileForm({ userId }: Props) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-800">
       <h3 className="font-semibold text-slate-900 dark:text-slate-100">Profile</h3>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        LeetCode:{" "}
+        {leetCodeUsername ? (
+          <span className="font-medium text-slate-700 dark:text-slate-300">{leetCodeUsername}</span>
+        ) : (
+          <span>not linked yet — set it from the Dashboard's "Import from LeetCode" section.</span>
+        )}
+      </p>
 
       <div className="mt-4 flex items-center gap-4">
         <div className="relative">
