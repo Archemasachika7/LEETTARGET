@@ -45,3 +45,16 @@ This bundles everything into `apps/extension/dist/`.
 
 Re-run `npm run build:ext` and click the reload icon on
 `chrome://extensions` after making changes.
+
+## Packaging for the Chrome Web Store
+
+```bash
+npm run package:ext
+```
+
+Builds and zips `dist/` into `apps/extension/release/leettarget-extension-v<version>.zip`,
+with `manifest.json` at the archive root as the store expects. See
+`STORE_LISTING.md` for the listing copy, permission justifications, and
+what's still needed (screenshots) before an actual submission, and
+`PRIVACY.md` for the privacy policy the store submission form requires a
+public URL for.

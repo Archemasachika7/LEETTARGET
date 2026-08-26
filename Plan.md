@@ -129,11 +129,11 @@ join key against `problems`.
 - **M0 — Scaffold** (done): monorepo, shared package, Supabase schema,
   extension skeleton that detects submissions and commits to GitHub, web app
   with CSV upload + manual add + repo mapping UI.
-- **M1 — Auth & sync** (mostly done): GitHub OAuth is live on a real
-  Supabase project (provider configured, schema applied); dashboard reads
-  live data via `packages/shared`-typed Supabase queries. Not yet
-  exercised: an actual extension-to-Supabase solve sync against that
-  project (needs a real LeetCode submission + a copied access token — see
+- **M1 — Auth & sync** (mostly done): GitHub OAuth is live and confirmed
+  working end-to-end on a real deployed site (sign-in, dashboard render,
+  all tabs) against a real Supabase project. Not yet exercised: an actual
+  extension-to-Supabase solve sync against that project (needs a real
+  LeetCode submission + a copied access token — see
   `apps/extension/README.md`).
 - **M2 — LeetCode API backfill** (code done, not deployed): `leetcode-proxy`
   edge function, proxy-aware `packages/shared/src/leetcode.ts`, and an
@@ -147,7 +147,14 @@ join key against `problems`.
   (`DifficultyBreakdown`), and a solution-file mapping override UI (the
   "Solved" tab's `SolutionMappingTable` — corrects a wrong auto-detected
   GitHub path per solve) are all in.
-- **M4 — Ship**: packaged extension (Chrome Web Store listing), hosted site.
+- **M4 — Ship** (mostly done): hosted site is live on Vercel
+  (`https://leetprodetails.vercel.app`, config in `apps/web/vercel.json`).
+  Extension packaging is ready — real icons, `npm run package:ext` zips a
+  store-uploadable archive, `apps/extension/STORE_LISTING.md` has the
+  listing copy/permission justifications and `PRIVACY.md` has the privacy
+  policy the store submission form requires a URL for. Still needs a human
+  with a Chrome Web Store developer account: actual screenshots from a live
+  session, and the submission itself.
 
 ## 8. Open questions (need a decision before M1/M2)
 

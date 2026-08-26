@@ -25,5 +25,6 @@ mkdirSync(`${outdir}/options`, { recursive: true });
 mkdirSync(`${outdir}/popup`, { recursive: true });
 cpSync("src/options/options.html", `${outdir}/options/options.html`);
 cpSync("src/popup/popup.html", `${outdir}/popup/popup.html`);
+cpSync("public/icons", `${outdir}/icons`, { recursive: true });
 
 console.log(`Built extension into ${outdir}/ — load it as an unpacked extension.`);
