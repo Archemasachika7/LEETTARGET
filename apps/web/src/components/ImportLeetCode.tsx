@@ -1,0 +1,81 @@
+import { useState, type FormEvent } from "react";
+import { leetCodeProxyUrl } from "../lib/leetcodeConfig.js";
+import { importFromLeetCode, type LeetCodeImportResult } from "../lib/api.js";
+
+interface Props {
+  userId: string;
+  onImported: () => void;
+}
+
+/** Backfills solved problems from a public LeetCode profile — useful for
+ * solves that predate installing the extension. Hides itself when no proxy
+ * is configured, since browsers can't call LeetCode's API directly. */
+export function ImportLeetCode({ userId, onImported }: Props) {
+  const [username, setUsername] = useState("");
+  const [result, setResult] = useState<LeetCodeImportResult>();
+  const [error, setError] = useState<string>();
+  const [loading, setLoading] = useState(false);
+
+  if (!leetCodeProxyUrl) {
+    return (
+      <div className="rounded-lg border border-slate-200 p-4 text-sm text-slate-500">
+        <h3 className="font-semibold text-slate-900">Import from LeetCode</h3>
+        <p className="mt-1">
+          Not available yet — deploy <code className="rounded bg-slate-100 px-1">leetcode-proxy</code> and
+          set <code className="rounded bg-slate-100 px-1">VITE_LEETCODE_PROXY_URL</code>. See{" "}
+          <code className="rounded bg-slate-100 px-1">supabase/README.md</code>.
+        </p>
+      </div>
+    );
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(undefined);
+    setResult(undefined);
+    try {
+      const outcome = await importFromLeetCode(userId, username, leetCodeProxyUrl!);
+      setResult(outcome);
+      onImported();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="rounded-lg border border-slate-200 p-4">
+      <h3 className="font-semibold text-slate-900">Import from LeetCode</h3>
+      <p className="mt-1 text-sm text-slate-500">
+        Backfills recent solves from a public profile — handy before the extension has seen everything.
+      </p>
+      <div className="mt-3 flex gap-2">
+        <input
+          required
+          placeholder="LeetCode username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+        >
+          {loading ? "Importing..." : "Import"}
+        </button>
+      </div>
+
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {result && (
+        <p className="mt-2 text-sm text-green-700">
+          {result.summary.totalSolved} solved on LeetCode ({result.summary.easySolved}E /{" "}
+          {result.summary.mediumSolved}M / {result.summary.hardSolved}H) — synced {result.imported} recent
+          solve{result.imported === 1 ? "" : "s"}.
+        </p>
+      )}
+    </form>
+  );
+}

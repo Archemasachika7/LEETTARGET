@@ -126,15 +126,25 @@ join key against `problems`.
 
 ## 7. Milestones
 
-- **M0 — Scaffold** (this session): monorepo, shared package, Supabase
-  schema, extension skeleton that detects submissions and commits to GitHub,
-  web app with CSV upload + manual add + repo mapping UI.
-- **M1 — Auth & sync**: GitHub OAuth on the site, extension ↔ Supabase sync
-  of solve events, dashboard reads live data.
-- **M2 — LeetCode API backfill**: edge function proxy, "import my solved
-  problems" button, reconciliation against `problems`.
-- **M3 — Polish**: solution-file mapping override UI, target CRUD, CSV
-  re-upload/diff ("update map"), stats/progress charts.
+- **M0 — Scaffold** (done): monorepo, shared package, Supabase schema,
+  extension skeleton that detects submissions and commits to GitHub, web app
+  with CSV upload + manual add + repo mapping UI.
+- **M1 — Auth & sync** (mostly done): GitHub OAuth is live on a real
+  Supabase project (provider configured, schema applied); dashboard reads
+  live data via `packages/shared`-typed Supabase queries. Not yet
+  exercised: an actual extension-to-Supabase solve sync against that
+  project (needs a real LeetCode submission + a copied access token — see
+  `apps/extension/README.md`).
+- **M2 — LeetCode API backfill** (code done, not deployed): `leetcode-proxy`
+  edge function, proxy-aware `packages/shared/src/leetcode.ts`, and an
+  "Import from LeetCode" button on the dashboard that upserts `problems`/
+  `solved_problems` and marks matching targets done. Still needs
+  `supabase functions deploy leetcode-proxy` and `VITE_LEETCODE_PROXY_URL`
+  set before it does anything (the UI hides itself until then).
+- **M3 — Polish** (partial): target deletion is in (`TargetsTable`'s Remove
+  button). Still open: solution-file mapping override UI, CSV re-upload
+  diff view (currently silent replace, no preview of what changed),
+  stats/progress charts.
 - **M4 — Ship**: packaged extension (Chrome Web Store listing), hosted site.
 
 ## 8. Open questions (need a decision before M1/M2)
