@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState } from "react";
 import { getSolvedByDifficulty, type DifficultyCounts } from "../lib/api.js";
 
@@ -37,7 +38,7 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
   useEffect(() => {
     getSolvedByDifficulty(userId)
       .then(setCounts)
-      .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+      .catch((err) => setError(getErrorMessage(err)));
   }, [userId, refreshKey]);
 
   if (error) return <p className="text-sm text-red-600">{error}</p>;

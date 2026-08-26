@@ -1,3 +1,4 @@
+import { getErrorMessage } from "./lib/errors.js";
 import { useCallback, useEffect, useState } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { SolvedProblem, Target } from "@leettarget/shared";
@@ -88,7 +89,7 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
         setSolved(s);
         setRefreshTick((n) => n + 1);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+      .catch((err) => setError(getErrorMessage(err)));
   }, [userId]);
 
   useEffect(() => {
@@ -100,7 +101,7 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
       await deleteTarget(id);
       refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(getErrorMessage(err));
     }
   }
 

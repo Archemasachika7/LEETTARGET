@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../lib/errors.js";
 import { useState, type FormEvent } from "react";
 import { addManualTarget } from "../lib/api.js";
 
@@ -23,7 +24,7 @@ export function AddTargetForm({ userId, onAdded }: Props) {
       setUrl("");
       onAdded();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }

@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../lib/errors.js";
 import { useMemo, useState } from "react";
 import { parseTargetsCsv, type CsvTargetRow, type Target } from "@leettarget/shared";
 import { replaceCsvTargets } from "../lib/api.js";
@@ -53,7 +54,7 @@ export function CsvUploader({ userId, targets, onImported }: Props) {
       setFilename(file.name);
     } catch (err) {
       setRows([]);
-      setError(err instanceof Error ? err.message : String(err));
+      setError(getErrorMessage(err));
     }
   }
 
@@ -66,7 +67,7 @@ export function CsvUploader({ userId, targets, onImported }: Props) {
       setRows([]);
       setFilename(undefined);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }

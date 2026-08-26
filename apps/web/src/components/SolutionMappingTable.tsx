@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState } from "react";
 import { buildSolutionPath, DEFAULT_PATH_TEMPLATE, type GithubLink } from "@leettarget/shared";
 import {
@@ -35,7 +36,7 @@ export function SolutionMappingTable({ userId, refreshKey }: Props) {
         setRows(solved);
         setGithubLink(link);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+      .catch((err) => setError(getErrorMessage(err)));
   }, [userId, refreshKey]);
 
   async function handleSave(id: string) {
@@ -47,7 +48,7 @@ export function SolutionMappingTable({ userId, refreshKey }: Props) {
       await updateSolvedGithubPath(id, path);
       setRows((prev) => prev?.map((r) => (r.id === id ? { ...r, githubPath: path } : r)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(getErrorMessage(err));
     } finally {
       setSavingId(undefined);
     }
