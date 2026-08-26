@@ -81,3 +81,12 @@ export interface ExtensionSetupCode {
   githubBranch?: string;
   pathTemplate?: string;
 }
+
+/** Display profile shown in the site header/profile tab — separate from
+ * Supabase Auth identity (which owns email/GitHub login) and from
+ * leetcode_profiles (sync plumbing, not user-facing). */
+export interface Profile {
+  userId: string;
+  bio?: string;
+  avatarUrl?: string;
+}

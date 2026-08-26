@@ -32,10 +32,18 @@ query recentAcSubmissions($username: String!, $limit: Int!) {
   }
 }`;
 
+const DIFFICULTY_QUERY = `
+query questionDifficulty($titleSlug: String!) {
+  question(titleSlug: $titleSlug) {
+    difficulty
+  }
+}`;
+
 interface ProxyRequest {
-  op: "summary" | "recent";
-  username: string;
+  op: "summary" | "recent" | "difficulty";
+  username?: string;
   limit?: number;
+  slug?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -54,15 +62,24 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Invalid JSON body." }, 400);
   }
 
-  if (!body.username || (body.op !== "summary" && body.op !== "recent")) {
-    return json({ error: 'Expected { op: "summary" | "recent", username: string }.' }, 400);
-  }
+  let query: string;
+  let variables: Record<string, unknown>;
 
-  const query = body.op === "summary" ? SUMMARY_QUERY : RECENT_QUERY;
-  const variables =
-    body.op === "summary"
-      ? { username: body.username }
-      : { username: body.username, limit: body.limit ?? 20 };
+  if (body.op === "summary" || body.op === "recent") {
+    if (!body.username) {
+      return json({ error: 'Expected { op: "summary" | "recent", username: string }.' }, 400);
+    }
+    query = body.op === "summary" ? SUMMARY_QUERY : RECENT_QUERY;
+    variables = body.op === "summary" ? { username: body.username } : { username: body.username, limit: body.limit ?? 20 };
+  } else if (body.op === "difficulty") {
+    if (!body.slug) {
+      return json({ error: 'Expected { op: "difficulty", slug: string }.' }, 400);
+    }
+    query = DIFFICULTY_QUERY;
+    variables = { titleSlug: body.slug };
+  } else {
+    return json({ error: 'Expected op to be "summary", "recent", or "difficulty".' }, 400);
+  }
 
   try {
     const upstream = await fetch(LEETCODE_GRAPHQL_ENDPOINT, {

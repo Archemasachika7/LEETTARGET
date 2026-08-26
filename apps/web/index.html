@@ -4,6 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LeetTarget</title>
+    <script>
+      // Applied before React mounts so there's no flash of the wrong theme
+      // on load. Kept in lockstep with apps/web/src/lib/theme.ts's storage
+      // key and fallback order (stored preference, then OS preference).
+      (function () {
+        try {
+          var stored = localStorage.getItem("leettarget-theme");
+          var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -158,27 +158,30 @@ export async function fetchSolvedSummary(
 }
 
 /** Looks up a single problem's difficulty by slug — used by the extension
- * to fill in the `{difficulty}` path segment when committing a solution,
- * since the submission event itself doesn't carry it. Falls back to
- * "Unknown" rather than throwing, since this is a nice-to-have for the
- * commit path, not a blocker. Always calls LeetCode directly (never
- * through the proxy) — this is only ever used by the extension's
- * background worker, which has `host_permissions` for leetcode.com and no
- * CORS restriction to route around, and the proxy doesn't serve this
- * query anyway (it only knows "summary"/"recent"). */
+ * to fill in the `{difficulty}` path segment when committing a solution
+ * (calling `endpoint` directly, since the background worker has
+ * `host_permissions` for leetcode.com and no CORS to route around), and by
+ * the web app's LeetCode import to enrich `problems.difficulty` beyond
+ * "Unknown" (via `proxyUrl`, since browsers can't call LeetCode directly).
+ * Falls back to "Unknown" rather than throwing — a nice-to-have, not a
+ * blocker, on both call paths. */
 export async function fetchQuestionDifficulty(
   slug: string,
-  options?: Pick<LeetCodeClientOptions, "endpoint" | "fetchImpl">
+  options?: LeetCodeClientOptions
 ): Promise<Problem["difficulty"]> {
   try {
-    const { endpoint = LEETCODE_GRAPHQL_ENDPOINT, fetchImpl = fetch } = options ?? {};
-    const res = await fetchImpl(endpoint, {
+    const { endpoint = LEETCODE_GRAPHQL_ENDPOINT, proxyUrl, proxyApiKey, fetchImpl = fetch } = options ?? {};
+    const [url, body] = proxyUrl
+      ? [proxyUrl, { op: "difficulty", slug }]
+      : [endpoint, { query: QUESTION_DIFFICULTY_QUERY, variables: { titleSlug: slug } }];
+
+    const res = await fetchImpl(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: QUESTION_DIFFICULTY_QUERY,
-        variables: { titleSlug: slug },
-      }),
+      headers: {
+        "Content-Type": "application/json",
+        ...(proxyUrl && proxyApiKey ? { apikey: proxyApiKey, Authorization: `Bearer ${proxyApiKey}` } : {}),
+      },
+      body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`LeetCode API request failed: ${res.status}`);
 
