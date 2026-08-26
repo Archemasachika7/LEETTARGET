@@ -143,7 +143,13 @@ join key against `problems`.
   "Import from LeetCode" button on the dashboard that upserts `problems`/
   `solved_problems` and marks matching targets done. Still needs
   `supabase functions deploy leetcode-proxy` and `VITE_LEETCODE_PROXY_URL`
-  set before it does anything (the UI hides itself until then).
+  set before it does anything (the UI hides itself until then). Also now
+  has a scheduled variant — `daily-import` (a `pg_cron`-triggered edge
+  function using the service role key) auto-imports every enrolled user's
+  recent solves once a day (9pm IST by default), so it doesn't rely on
+  someone remembering to click Import. A manual import enrolls the
+  username automatically (`leetcode_profiles`). Needs its own deploy +
+  `pg_cron`/`pg_net` schedule, documented in `supabase/README.md`.
 - **M3 — Polish** (done): target deletion (`TargetsTable`'s Remove button),
   CSV re-upload diff preview (`CsvUploader` shows added/removed/unchanged
   before saving), a solved-by-difficulty progress chart

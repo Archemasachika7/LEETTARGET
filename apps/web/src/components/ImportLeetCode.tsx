@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { leetCodeProxyUrl } from "../lib/leetcodeConfig.js";
-import { importFromLeetCode, type LeetCodeImportResult } from "../lib/api.js";
+import { getLeetCodeUsername, importFromLeetCode, type LeetCodeImportResult } from "../lib/api.js";
 
 interface Props {
   userId: string;
@@ -9,12 +9,25 @@ interface Props {
 
 /** Backfills solved problems from a public LeetCode profile — useful for
  * solves that predate installing the extension. Hides itself when no proxy
- * is configured, since browsers can't call LeetCode's API directly. */
+ * is configured, since browsers can't call LeetCode's API directly. A
+ * successful import also enrolls the username for the daily 9pm IST
+ * auto-import (see `supabase/functions/daily-import`), so this doubles as
+ * that feature's setup UI. */
 export function ImportLeetCode({ userId, onImported }: Props) {
   const [username, setUsername] = useState("");
+  const [savedUsername, setSavedUsername] = useState<string>();
   const [result, setResult] = useState<LeetCodeImportResult>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getLeetCodeUsername(userId)
+      .then((saved) => {
+        setSavedUsername(saved);
+        if (saved) setUsername((current) => current || saved);
+      })
+      .catch(() => {}); // non-critical — just skips the prefill/status line
+  }, [userId]);
 
   if (!leetCodeProxyUrl) {
     return (
@@ -37,6 +50,7 @@ export function ImportLeetCode({ userId, onImported }: Props) {
     try {
       const outcome = await importFromLeetCode(userId, username, leetCodeProxyUrl!);
       setResult(outcome);
+      setSavedUsername(username);
       onImported();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -67,6 +81,12 @@ export function ImportLeetCode({ userId, onImported }: Props) {
           {loading ? "Importing..." : "Import"}
         </button>
       </div>
+
+      {savedUsername && (
+        <p className="mt-2 text-xs text-slate-400">
+          Auto-imports daily at 9pm IST for <span className="font-medium">{savedUsername}</span>.
+        </p>
+      )}
 
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       {result && (
