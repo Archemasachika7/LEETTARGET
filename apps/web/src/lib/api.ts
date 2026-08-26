@@ -196,6 +196,42 @@ export async function listProblems(): Promise<Problem[]> {
   return (data ?? []).map(rowToProblem);
 }
 
+export interface DifficultyCounts {
+  easy: number;
+  medium: number;
+  hard: number;
+  /** Solves whose problem row hasn't had a difficulty resolved yet — e.g.
+   * imported via "Import from LeetCode", which doesn't fetch per-problem
+   * difficulty (see `importFromLeetCode`). */
+  unknown: number;
+}
+
+/** Solved counts by difficulty, via a join against `problems` so we don't
+ * have to fetch the whole catalog client-side just to bucket a handful of
+ * solves. */
+export async function getSolvedByDifficulty(userId: string): Promise<DifficultyCounts> {
+  // `.returns<T>()` overrides supabase-js's generic-less inference, which
+  // (with no generated Database types available) can't tell this is a
+  // to-one embed (via solved_problems.problem_id) and otherwise guesses an
+  // array shape — PostgREST actually returns a single object here.
+  const { data, error } = await requireClient()
+    .from("solved_problems")
+    .select("problem:problems(difficulty)")
+    .eq("user_id", userId)
+    .returns<{ problem: { difficulty: string } | null }[]>();
+  if (error) throw error;
+
+  const counts: DifficultyCounts = { easy: 0, medium: 0, hard: 0, unknown: 0 };
+  for (const row of data ?? []) {
+    const difficulty = row.problem?.difficulty;
+    if (difficulty === "Easy") counts.easy++;
+    else if (difficulty === "Medium") counts.medium++;
+    else if (difficulty === "Hard") counts.hard++;
+    else counts.unknown++;
+  }
+  return counts;
+}
+
 // --- row <-> type mapping (snake_case DB columns -> camelCase types) -----
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -9,6 +9,7 @@ import { AddTargetForm } from "./components/AddTargetForm.js";
 import { RepoMappingForm } from "./components/RepoMappingForm.js";
 import { TargetsTable } from "./components/TargetsTable.js";
 import { ProgressSummary } from "./components/ProgressSummary.js";
+import { DifficultyBreakdown } from "./components/DifficultyBreakdown.js";
 
 export default function App() {
   if (!isSupabaseConfigured || !supabase) {
@@ -76,12 +77,14 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
   const [targets, setTargets] = useState<Target[]>([]);
   const [solved, setSolved] = useState<SolvedProblem[]>([]);
   const [error, setError] = useState<string>();
+  const [refreshTick, setRefreshTick] = useState(0);
 
   const refresh = useCallback(() => {
     Promise.all([listTargets(userId), listSolvedProblems(userId)])
       .then(([t, s]) => {
         setTargets(t);
         setSolved(s);
+        setRefreshTick((n) => n + 1);
       })
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
   }, [userId]);
@@ -129,6 +132,7 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
         {tab === "dashboard" && (
           <>
             <ProgressSummary targets={targets} solved={solved} />
+            <DifficultyBreakdown userId={userId} refreshKey={refreshTick} />
             <ImportLeetCode userId={userId} onImported={refresh} />
             <div>
               <h2 className="mb-2 text-sm font-medium text-slate-700">Recent targets</h2>
