@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState, type FormEvent } from "react";
 import { DEFAULT_PATH_TEMPLATE, parseRepoInput, type GithubLink } from "@leettarget/shared";
 import { getGithubLink, upsertGithubLink } from "../lib/api.js";
@@ -37,7 +38,7 @@ export function RepoMappingForm({ userId }: Props) {
       await upsertGithubLink(link);
       setSaved(link);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }

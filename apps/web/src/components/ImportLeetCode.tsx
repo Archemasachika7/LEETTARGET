@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState, type FormEvent } from "react";
 import { leetCodeProxyUrl } from "../lib/leetcodeConfig.js";
 import { getLeetCodeUsername, importFromLeetCode, type LeetCodeImportResult } from "../lib/api.js";
@@ -53,7 +54,7 @@ export function ImportLeetCode({ userId, onImported }: Props) {
       setSavedUsername(username);
       onImported();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

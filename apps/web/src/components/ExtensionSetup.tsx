@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState } from "react";
 import type { ExtensionSetupCode } from "@leettarget/shared";
 import { getGithubLink } from "../lib/api.js";
@@ -21,7 +22,7 @@ export function ExtensionSetup({ userId }: Props) {
 
   useEffect(() => {
     if (!supabase) return;
-    generate().catch((err) => setError(err instanceof Error ? err.message : String(err)));
+    generate().catch((err) => setError(getErrorMessage(err)));
 
     async function generate() {
       const [{ data: sessionData }, githubLink] = await Promise.all([
