@@ -60,15 +60,15 @@ export function ExtensionSetup({ userId }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 p-4">
-      <h3 className="font-semibold text-slate-900">Extension setup</h3>
-      <p className="mt-1 text-sm text-slate-500">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-800">
+      <h3 className="font-semibold text-slate-900 dark:text-slate-100">Extension setup</h3>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         Copy this into the extension's options page ("Paste setup code from site") to wire it up to
         this account — it fills in your repo mapping too, so all that's left is your GitHub personal
         access token.
       </p>
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {code && (
         <>
@@ -76,16 +76,16 @@ export function ExtensionSetup({ userId }: Props) {
             readOnly
             value={code}
             rows={8}
-            className="mt-3 w-full rounded border border-slate-300 bg-slate-50 p-2 font-mono text-xs"
+            className="mt-3 w-full rounded border border-slate-300 bg-slate-50 p-2 font-mono text-xs text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
             onFocus={(e) => e.currentTarget.select()}
           />
           <button
             onClick={handleCopy}
-            className="mt-2 rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white"
+            className="mt-2 rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white transition-colors duration-200 dark:bg-slate-100 dark:text-slate-900"
           >
             {copied ? "Copied!" : "Copy setup code"}
           </button>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
             Contains a live access token — treat it like a password, and re-copy a fresh one if you
             think it leaked (signing out and back in rotates it).
           </p>

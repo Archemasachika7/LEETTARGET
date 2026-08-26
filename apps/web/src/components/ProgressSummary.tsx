@@ -19,9 +19,9 @@ export function ProgressSummary({ targets, solved }: Props) {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-slate-200 p-4 text-center">
-      <div className="text-2xl font-semibold text-slate-900">{value}</div>
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
+    <div className="rounded-lg border border-slate-200 bg-white p-4 text-center transition-colors duration-300 dark:border-slate-700 dark:bg-slate-800">
+      <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{value}</div>
+      <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
     </div>
   );
 }

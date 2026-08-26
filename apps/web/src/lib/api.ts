@@ -2,11 +2,17 @@ import type {
   GithubLink,
   LeetCodeSolvedSummary,
   Problem,
+  Profile,
   SolvedProblem,
   Target,
   TargetSource,
 } from "@leettarget/shared";
-import { fetchRecentAcSubmissions, fetchSolvedSummary, slugFromLeetCodeUrl } from "@leettarget/shared";
+import {
+  fetchQuestionDifficulty,
+  fetchRecentAcSubmissions,
+  fetchSolvedSummary,
+  slugFromLeetCodeUrl,
+} from "@leettarget/shared";
 import { supabase } from "./supabaseClient.js";
 
 function requireClient() {
@@ -155,6 +161,52 @@ export async function upsertGithubLink(link: GithubLink): Promise<void> {
   if (error) throw error;
 }
 
+// --- profile ---------------------------------------------------------------
+
+export async function getProfile(userId: string): Promise<Profile | undefined> {
+  const { data, error } = await requireClient()
+    .from("profiles")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? rowToProfile(data) : undefined;
+}
+
+export async function upsertProfileBio(userId: string, bio: string): Promise<void> {
+  const { error } = await requireClient()
+    .from("profiles")
+    .upsert({ user_id: userId, bio, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
+/** Uploads an avatar to the "avatars" storage bucket under the user's own
+ * folder (required by the bucket's RLS policies — see
+ * supabase/migrations/0003_profiles.sql) and saves the resulting public URL
+ * onto the profile row. */
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  const client = requireClient();
+  const ext = file.name.split(".").pop() || "png";
+  const path = `${userId}/avatar.${ext}`;
+
+  const { error: uploadError } = await client.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true, cacheControl: "3600" });
+  if (uploadError) throw uploadError;
+
+  const { data: publicUrlData } = client.storage.from("avatars").getPublicUrl(path);
+  // Storage URLs are stable per path, so the browser can cache a stale
+  // image after a re-upload unless the URL itself changes.
+  const avatarUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+
+  const { error: profileError } = await client
+    .from("profiles")
+    .upsert({ user_id: userId, avatar_url: avatarUrl, updated_at: new Date().toISOString() });
+  if (profileError) throw profileError;
+
+  return avatarUrl;
+}
+
 // --- LeetCode import -------------------------------------------------------
 
 export interface LeetCodeImportResult {
@@ -163,6 +215,29 @@ export interface LeetCodeImportResult {
    * `fetchRecentAcSubmissions`'s limit — this is a recent-activity backfill,
    * not a full history import (LeetCode's public API doesn't expose one). */
   imported: number;
+}
+
+const DIFFICULTY_FETCH_CONCURRENCY = 5;
+
+/** Fetches difficulty for each slug through the proxy, a few at a time —
+ * `Promise.all` over the whole list would fire e.g. 100 requests at once,
+ * which is more load than a "nice to have" chart deserves to put on
+ * LeetCode's API. Failures already resolve to "Unknown" inside
+ * `fetchQuestionDifficulty` itself, so this never throws. */
+async function fetchDifficultiesBatched(
+  slugs: string[],
+  proxyUrl: string,
+  proxyApiKey: string
+): Promise<Map<string, Problem["difficulty"]>> {
+  const result = new Map<string, Problem["difficulty"]>();
+  for (let i = 0; i < slugs.length; i += DIFFICULTY_FETCH_CONCURRENCY) {
+    const batch = slugs.slice(i, i + DIFFICULTY_FETCH_CONCURRENCY);
+    const difficulties = await Promise.all(
+      batch.map((slug) => fetchQuestionDifficulty(slug, { proxyUrl, proxyApiKey }))
+    );
+    batch.forEach((slug, idx) => result.set(slug, difficulties[idx]));
+  }
+  return result;
 }
 
 /** Pulls a public LeetCode profile's solved counts + recent accepted
@@ -202,6 +277,19 @@ export async function importFromLeetCode(
   }
   const uniqueRecent = [...uniqueBySlug.values()];
 
+  // LeetCode's recent-submissions query doesn't include difficulty, so it
+  // has to be fetched per problem — otherwise every imported problem would
+  // sit at "Unknown" forever, and the dashboard's difficulty chart would
+  // never show anything but the gray "unresolved" bucket for anyone who
+  // only ever imports (rather than solving through the extension, which
+  // resolves it per-solve). Batched at a modest concurrency rather than
+  // fired all at once, out of courtesy to LeetCode's API.
+  const difficultyBySlug = await fetchDifficultiesBatched(
+    uniqueRecent.map((r) => r.slug),
+    proxyUrl,
+    proxyApiKey
+  );
+
   const client = requireClient();
 
   const { data: problemRows, error: problemError } = await client
@@ -211,9 +299,7 @@ export async function importFromLeetCode(
         slug: r.slug,
         title: r.title,
         url: `https://leetcode.com/problems/${r.slug}/`,
-        // LeetCode's recent-submissions query doesn't include difficulty;
-        // it's filled in lazily (extension solves resolve it per-problem).
-        difficulty: "Unknown",
+        difficulty: difficultyBySlug.get(r.slug) ?? "Unknown",
       })),
       { onConflict: "slug", ignoreDuplicates: false }
     )
@@ -431,5 +517,14 @@ function rowToProblem(row: any): Problem {
     url: row.url,
     difficulty: row.difficulty,
     tags: row.tags ?? [],
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowToProfile(row: any): Profile {
+  return {
+    userId: row.user_id,
+    bio: row.bio ?? undefined,
+    avatarUrl: row.avatar_url ?? undefined,
   };
 }

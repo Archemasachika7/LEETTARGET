@@ -7,13 +7,13 @@ interface Props {
 
 export function TargetsTable({ targets, onRemove }: Props) {
   if (targets.length === 0) {
-    return <p className="text-sm text-slate-500">No targets yet — add one or upload a CSV.</p>;
+    return <p className="text-sm text-slate-500 dark:text-slate-400">No targets yet — add one or upload a CSV.</p>;
   }
 
   return (
     <table className="w-full text-sm">
       <thead>
-        <tr className="border-b border-slate-200 text-left text-slate-500">
+        <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
           <th className="py-1.5 pr-2 font-medium">Question</th>
           <th className="py-1.5 pr-2 font-medium">Source</th>
           <th className="py-1.5 pr-2 font-medium">Status</th>
@@ -22,14 +22,14 @@ export function TargetsTable({ targets, onRemove }: Props) {
       </thead>
       <tbody>
         {targets.map((target) => (
-          <tr key={target.id} className="border-b border-slate-100">
-            <td className="py-1.5 pr-2">
+          <tr key={target.id} className="border-b border-slate-100 dark:border-slate-800">
+            <td className="py-1.5 pr-2 text-slate-900 dark:text-slate-100">
               {target.customUrl ? (
                 <a
                   href={target.customUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-blue-600 hover:underline"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
                 >
                   {target.customTitle ?? target.customUrl}
                 </a>
@@ -37,13 +37,13 @@ export function TargetsTable({ targets, onRemove }: Props) {
                 target.customTitle ?? target.problemId
               )}
             </td>
-            <td className="py-1.5 pr-2 text-slate-500">{target.source}</td>
+            <td className="py-1.5 pr-2 text-slate-500 dark:text-slate-400">{target.source}</td>
             <td className="py-1.5 pr-2">
               <span
                 className={
                   target.status === "done"
-                    ? "rounded bg-green-100 px-1.5 py-0.5 text-green-700"
-                    : "rounded bg-slate-100 px-1.5 py-0.5 text-slate-600"
+                    ? "rounded bg-green-100 px-1.5 py-0.5 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                    : "rounded bg-slate-100 px-1.5 py-0.5 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                 }
               >
                 {target.status}
@@ -53,7 +53,7 @@ export function TargetsTable({ targets, onRemove }: Props) {
               <td className="py-1.5 text-right">
                 <button
                   onClick={() => onRemove(target.id)}
-                  className="text-xs text-slate-400 hover:text-red-600"
+                  className="text-xs text-slate-400 transition-colors duration-200 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400"
                   aria-label={`Remove ${target.customTitle ?? "target"}`}
                 >
                   Remove

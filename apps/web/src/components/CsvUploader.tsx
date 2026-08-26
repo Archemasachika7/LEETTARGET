@@ -74,9 +74,9 @@ export function CsvUploader({ userId, targets, onImported }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 p-4">
-      <h3 className="font-semibold text-slate-900">Upload targets CSV</h3>
-      <p className="mt-1 text-sm text-slate-500">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-800">
+      <h3 className="font-semibold text-slate-900 dark:text-slate-100">Upload targets CSV</h3>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         Columns: a question/title column and a link column. Re-upload anytime
         to update the map — solved targets are kept.
       </p>
@@ -84,36 +84,36 @@ export function CsvUploader({ userId, targets, onImported }: Props) {
       <input
         type="file"
         accept=".csv,text/csv"
-        className="mt-3 block text-sm"
+        className="mt-3 block text-sm text-slate-700 dark:text-slate-300"
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) void handleFile(file);
         }}
       />
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {rows.length > 0 && diff && (
-        <div className="mt-4">
-          <p className="text-sm text-slate-600">
+        <div className="mt-4 animate-fade-in">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Parsed {rows.length} row{rows.length === 1 ? "" : "s"} from{" "}
-            <span className="font-medium">{filename}</span>.
+            <span className="font-medium text-slate-900 dark:text-slate-100">{filename}</span>.
           </p>
 
           {pendingCsvTargets.length > 0 && (
             <p className="mt-1 text-sm">
-              <span className="text-green-700">+{diff.added.length} new</span>
+              <span className="text-green-700 dark:text-green-400">+{diff.added.length} new</span>
               {", "}
-              <span className={diff.removed.length > 0 ? "text-red-600" : "text-slate-500"}>
+              <span className={diff.removed.length > 0 ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-400"}>
                 -{diff.removed.length} removed
               </span>
               {", "}
-              <span className="text-slate-500">{diff.unchanged} unchanged</span>
+              <span className="text-slate-500 dark:text-slate-400">{diff.unchanged} unchanged</span>
             </p>
           )}
 
           {diff.removed.length > 0 && (
-            <div className="mt-2 rounded border border-red-100 bg-red-50 p-2 text-sm text-red-700">
+            <div className="mt-2 rounded border border-red-100 bg-red-50 p-2 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
               Saving will remove {diff.removed.length} target
               {diff.removed.length === 1 ? "" : "s"} no longer in this file:
               <ul className="mt-1 list-inside list-disc">
@@ -133,7 +133,7 @@ export function CsvUploader({ userId, targets, onImported }: Props) {
                   href={row.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-blue-600 hover:underline"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
                 >
                   {row.title}
                 </a>
@@ -143,7 +143,7 @@ export function CsvUploader({ userId, targets, onImported }: Props) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="mt-3 rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+            className="mt-3 rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white transition-colors duration-200 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
           >
             {saving ? "Saving..." : "Save as targets"}
           </button>

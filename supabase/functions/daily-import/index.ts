@@ -25,6 +25,15 @@ query recentAcSubmissions($username: String!, $limit: Int!) {
   }
 }`;
 
+const DIFFICULTY_QUERY = `
+query questionDifficulty($titleSlug: String!) {
+  question(titleSlug: $titleSlug) {
+    difficulty
+  }
+}`;
+
+const DIFFICULTY_FETCH_CONCURRENCY = 5;
+
 interface RecentSubmission {
   title: string;
   titleSlug: string;
@@ -107,6 +116,7 @@ async function importOne(
     if (!uniqueBySlug.has(r.titleSlug)) uniqueBySlug.set(r.titleSlug, r);
   }
   const uniqueRecent = [...uniqueBySlug.values()];
+  const difficultyBySlug = await fetchDifficultiesBatched(uniqueRecent.map((r) => r.titleSlug));
 
   const problemRes = await fetch(`${supabaseUrl}/rest/v1/problems?on_conflict=slug`, {
     method: "POST",
@@ -116,7 +126,7 @@ async function importOne(
         slug: r.titleSlug,
         title: r.title,
         url: `https://leetcode.com/problems/${r.titleSlug}/`,
-        difficulty: "Unknown",
+        difficulty: difficultyBySlug.get(r.titleSlug) ?? "Unknown",
       }))
     ),
   });
@@ -148,6 +158,36 @@ async function importOne(
   if (!targetRes.ok) throw new Error(`targets update failed: ${targetRes.status}`);
 
   return uniqueRecent.length;
+}
+
+/** Fetches difficulty for each slug a few at a time — out of courtesy to
+ * LeetCode's API, not because this server-side path has a CORS or
+ * per-browser rate concern. Never throws; an unresolvable slug just stays
+ * "Unknown" (see `fetchQuestionDifficulty`). */
+async function fetchDifficultiesBatched(slugs: string[]): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  for (let i = 0; i < slugs.length; i += DIFFICULTY_FETCH_CONCURRENCY) {
+    const batch = slugs.slice(i, i + DIFFICULTY_FETCH_CONCURRENCY);
+    const difficulties = await Promise.all(batch.map(fetchQuestionDifficulty));
+    batch.forEach((slug, idx) => result.set(slug, difficulties[idx]));
+  }
+  return result;
+}
+
+async function fetchQuestionDifficulty(slug: string): Promise<string> {
+  try {
+    const res = await fetch(LEETCODE_GRAPHQL_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: DIFFICULTY_QUERY, variables: { titleSlug: slug } }),
+    });
+    if (!res.ok) return "Unknown";
+    const payload = (await res.json()) as { data?: { question: { difficulty: string } | null } };
+    const difficulty = payload.data?.question?.difficulty;
+    return difficulty === "Easy" || difficulty === "Medium" || difficulty === "Hard" ? difficulty : "Unknown";
+  } catch {
+    return "Unknown";
+  }
 }
 
 async function fetchRecentSubmissions(username: string): Promise<RecentSubmission[]> {

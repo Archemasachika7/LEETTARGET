@@ -33,12 +33,13 @@ export function ImportLeetCode({ userId, onImported }: Props) {
 
   if (!leetCodeProxyUrl) {
     return (
-      <div className="rounded-lg border border-slate-200 p-4 text-sm text-slate-500">
-        <h3 className="font-semibold text-slate-900">Import from LeetCode</h3>
+      <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+        <h3 className="font-semibold text-slate-900 dark:text-slate-100">Import from LeetCode</h3>
         <p className="mt-1">
-          Not available yet — deploy <code className="rounded bg-slate-100 px-1">leetcode-proxy</code> and
-          set <code className="rounded bg-slate-100 px-1">VITE_LEETCODE_PROXY_URL</code>. See{" "}
-          <code className="rounded bg-slate-100 px-1">supabase/README.md</code>.
+          Not available yet — deploy{" "}
+          <code className="rounded bg-slate-100 px-1 dark:bg-slate-700">leetcode-proxy</code> and set{" "}
+          <code className="rounded bg-slate-100 px-1 dark:bg-slate-700">VITE_LEETCODE_PROXY_URL</code>. See{" "}
+          <code className="rounded bg-slate-100 px-1 dark:bg-slate-700">supabase/README.md</code>.
         </p>
       </div>
     );
@@ -66,26 +67,26 @@ export function ImportLeetCode({ userId, onImported }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 p-4">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-slate-900">Import from LeetCode</h3>
-        {savedUsername && (
-          <button
-            onClick={() => void runImport(savedUsername)}
-            disabled={loading}
-            className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {loading ? "Syncing..." : "Sync now"}
-          </button>
-        )}
+        <h3 className="font-semibold text-slate-900 dark:text-slate-100">Import from LeetCode</h3>
+        <button
+          onClick={() => savedUsername && void runImport(savedUsername)}
+          disabled={loading || !savedUsername}
+          title={savedUsername ? undefined : "Import a username below first"}
+          className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white transition-colors duration-200 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+        >
+          {loading ? "Syncing..." : "Sync now"}
+        </button>
       </div>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         Backfills recent solves from a public profile — handy before the extension has seen everything.
       </p>
 
       {savedUsername && (
-        <p className="mt-2 text-xs text-slate-400">
-          Auto-imports daily at 9pm IST for <span className="font-medium">{savedUsername}</span>. "Sync
+        <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+          Auto-imports daily at 9pm IST for{" "}
+          <span className="font-medium text-slate-600 dark:text-slate-300">{savedUsername}</span>. "Sync
           now" runs it immediately.
         </p>
       )}
@@ -96,20 +97,20 @@ export function ImportLeetCode({ userId, onImported }: Props) {
           placeholder={savedUsername ? "Different username?" : "LeetCode username"}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+          className="flex-1 rounded border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 transition-colors duration-200 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
         <button
           type="submit"
           disabled={loading}
-          className="rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 disabled:opacity-50"
+          className="rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors duration-200 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300"
         >
           {loading ? "Importing..." : "Import"}
         </button>
       </form>
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
       {result && (
-        <p className="mt-2 text-sm text-green-700">
+        <p className="mt-2 text-sm text-green-700 animate-fade-in dark:text-green-400">
           {result.summary.totalSolved} solved on LeetCode ({result.summary.easySolved}E /{" "}
           {result.summary.mediumSolved}M / {result.summary.hardSolved}H) — synced {result.imported} recent
           solve{result.imported === 1 ? "" : "s"}.
