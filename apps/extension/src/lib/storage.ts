@@ -11,11 +11,19 @@ export interface ExtensionConfig {
   /** The signed-in user's id — used as the `user_id` on synced rows. */
   leetTargetUserId?: string;
   /** The signed-in user's Supabase access token (JWT), so writes satisfy
-   * row-level security as that user rather than as the anon role. Copy it
-   * from the site's "Extension setup" page. Short-lived by design — a
-   * proper refresh-token flow is tracked as an M1 open item in Plan.md;
-   * for now, re-copying it when sync starts failing is the workaround. */
+   * row-level security as that user rather than as the anon role. Set from
+   * the site's "Extension setup" page's copyable setup code. Short-lived
+   * (Supabase's default is ~1hr) — `supabaseRefreshToken` is what keeps
+   * this working past that; see `lib/supabaseAuth.ts`. */
   supabaseAccessToken?: string;
+  /** Used to silently mint a new access token when the current one expires
+   * or is rejected — see `lib/supabaseAuth.ts`. Supabase rotates this on
+   * every use, so it's always overwritten together with the access token,
+   * never read without also being replaced. */
+  supabaseRefreshToken?: string;
+  /** Unix seconds. Lets a refresh happen proactively, just before expiry,
+   * rather than only reactively after a 401 — see `isTokenStale`. */
+  supabaseExpiresAt?: number;
 }
 
 const STORAGE_KEY = "leettarget-config";

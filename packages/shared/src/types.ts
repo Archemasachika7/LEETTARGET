@@ -64,3 +64,20 @@ export interface CsvImportSummary {
   rowCount: number;
   importedAt: string;
 }
+
+/** What the site's "Extension setup" page generates, and what the
+ * extension's options page parses — the shape both sides agree on so a
+ * one-time copy/paste is enough to wire up sync (repo mapping included, so
+ * only the GitHub PAT itself has to be entered separately — it never
+ * touches Supabase, by design). */
+export interface ExtensionSetupCode {
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+  leetTargetUserId: string;
+  supabaseAccessToken: string;
+  supabaseRefreshToken: string;
+  githubOwner?: string;
+  githubRepo?: string;
+  githubBranch?: string;
+  pathTemplate?: string;
+}

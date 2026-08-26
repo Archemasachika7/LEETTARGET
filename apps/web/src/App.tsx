@@ -11,6 +11,7 @@ import { TargetsTable } from "./components/TargetsTable.js";
 import { ProgressSummary } from "./components/ProgressSummary.js";
 import { DifficultyBreakdown } from "./components/DifficultyBreakdown.js";
 import { SolutionMappingTable } from "./components/SolutionMappingTable.js";
+import { ExtensionSetup } from "./components/ExtensionSetup.js";
 
 export default function App() {
   if (!isSupabaseConfigured || !supabase) {
@@ -169,7 +170,12 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
           </div>
         )}
 
-        {tab === "repo" && <RepoMappingForm userId={userId} />}
+        {tab === "repo" && (
+          <>
+            <RepoMappingForm userId={userId} />
+            <ExtensionSetup userId={userId} />
+          </>
+        )}
       </div>
     </div>
   );

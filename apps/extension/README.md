@@ -34,12 +34,16 @@ This bundles everything into `apps/extension/dist/`.
 2. Enable "Developer mode" (top right).
 3. Click "Load unpacked" and select `apps/extension/dist`.
 4. Click the LeetTarget icon → Options, and fill in:
-   - Your GitHub `owner/repo`, branch, and a personal access token with
-     `repo` scope (Settings → Developer settings → Personal access tokens
-     on GitHub).
-   - Optionally, your Supabase project URL/anon key, your LeetTarget user
-     id, and an access token from the site's "Extension setup" page, to
-     also sync solves into the dashboard.
+   - A GitHub personal access token with `repo` scope (Settings →
+     Developer settings → Personal access tokens on GitHub). This is the
+     one thing that's always manual — it never leaves the extension.
+   - Everything else — GitHub `owner/repo`/branch, and (optionally) the
+     Supabase config to also sync solves into the dashboard — comes from
+     pasting the setup code generated on the site's "Repo mapping" tab
+     into the "Paste setup code from the site" box and clicking Apply. It
+     includes a refresh token, so the extension keeps syncing past
+     Supabase's ~1hr access-token expiry without you having to re-copy
+     anything.
 5. Solve a problem on `leetcode.com` — an accepted submission should commit
    to your repo within a couple seconds.
 

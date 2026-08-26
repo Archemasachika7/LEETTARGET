@@ -131,10 +131,13 @@ join key against `problems`.
   with CSV upload + manual add + repo mapping UI.
 - **M1 — Auth & sync** (mostly done): GitHub OAuth is live and confirmed
   working end-to-end on a real deployed site (sign-in, dashboard render,
-  all tabs) against a real Supabase project. Not yet exercised: an actual
-  extension-to-Supabase solve sync against that project (needs a real
-  LeetCode submission + a copied access token — see
-  `apps/extension/README.md`).
+  all tabs) against a real Supabase project. The extension's Supabase sync
+  self-refreshes its access token now (site's "Repo mapping" tab has an
+  "Extension setup" section generating a one-paste setup code with both an
+  access and refresh token, plus the repo mapping) rather than breaking
+  after Supabase's ~1hr token expiry. Not yet exercised: an actual
+  extension-to-Supabase solve sync against a real project (needs a real
+  LeetCode submission — see `apps/extension/README.md`).
 - **M2 — LeetCode API backfill** (code done, not deployed): `leetcode-proxy`
   edge function, proxy-aware `packages/shared/src/leetcode.ts`, and an
   "Import from LeetCode" button on the dashboard that upserts `problems`/
