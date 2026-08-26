@@ -26,6 +26,10 @@ export function RepoMappingForm({ userId, onSynced }: Props) {
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string>();
+  // Held in memory only for the sync request itself — never saved to
+  // github_links or sent anywhere but api.github.com, and cleared on
+  // reload like the rest of this component's transient state.
+  const [githubToken, setGithubToken] = useState("");
 
   useEffect(() => {
     getGithubLink(userId).then((link) => {
@@ -59,7 +63,7 @@ export function RepoMappingForm({ userId, onSynced }: Props) {
     setError(undefined);
     setSyncResult(undefined);
     try {
-      const result = await syncFromGithubRepo(userId, saved, leetCodeProxyUrl);
+      const result = await syncFromGithubRepo(userId, saved, leetCodeProxyUrl, githubToken || undefined);
       setSyncResult(
         result.matched === 0
           ? "No matching problems found in that repo."
@@ -125,6 +129,17 @@ export function RepoMappingForm({ userId, onSynced }: Props) {
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Already have solutions committed there (e.g. from LeetHub)? Scan the repo and backfill solved
             status instead of only tracking new solves.
+          </p>
+          <input
+            type="password"
+            placeholder="GitHub token (only needed if the repo is private)"
+            value={githubToken}
+            onChange={(e) => setGithubToken(e.target.value)}
+            className="mt-2 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 transition-colors duration-200 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+          />
+          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+            Leave blank for a public repo. Used only for this one sync request — never saved, never sent
+            anywhere but GitHub.
           </p>
           <button
             type="button"

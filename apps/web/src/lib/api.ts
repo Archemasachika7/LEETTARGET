@@ -184,13 +184,16 @@ export interface GithubSyncResult {
 export async function syncFromGithubRepo(
   userId: string,
   link: GithubLink,
-  proxyUrl?: string
+  proxyUrl?: string,
+  /** Only needed for a private repo — a public one works without it. Used
+   * solely for the one GitHub API request this makes; never sent to
+   * Supabase or persisted anywhere. */
+  githubToken?: string
 ): Promise<GithubSyncResult> {
-  const candidates = await fetchRepoSolvedSlugs({
-    owner: link.owner,
-    repo: link.repo,
-    branch: link.branch,
-  });
+  const candidates = await fetchRepoSolvedSlugs(
+    { owner: link.owner, repo: link.repo, branch: link.branch },
+    { token: githubToken }
+  );
   if (candidates.size === 0) return { matched: 0, newlySynced: 0 };
 
   const slugs = [...candidates.keys()];

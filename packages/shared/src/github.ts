@@ -88,6 +88,15 @@ function candidateSlugFromSegment(segment: string): string | undefined {
   return normalized;
 }
 
+export interface FetchRepoSolvedSlugsOptions {
+  /** A GitHub personal access token, required to read a private repo — a
+   * public repo doesn't need one. Callers are responsible for how they
+   * source/store it; this function only ever attaches it to the one
+   * request it makes here, never persists it. */
+  token?: string;
+  fetchImpl?: typeof fetch;
+}
+
 /** Best-effort match of a mapped GitHub repo's existing folder/file names
  * back to LeetCode slugs, so a repo that already has solutions committed
  * (e.g. from LeetHub, before LeetTarget existed) can be backfilled instead
@@ -98,23 +107,34 @@ function candidateSlugFromSegment(segment: string): string | undefined {
  * slug -> the file path to record as that solve's `github_path`. */
 export async function fetchRepoSolvedSlugs(
   ref: Required<GithubRepoRef>,
-  fetchImpl: typeof fetch = fetch
+  options?: FetchRepoSolvedSlugsOptions
 ): Promise<Map<string, string>> {
+  const { token, fetchImpl = fetch } = options ?? {};
   const res = await fetchImpl(
-    `https://api.github.com/repos/${ref.owner}/${ref.repo}/git/trees/${encodeURIComponent(ref.branch)}?recursive=1`
+    `https://api.github.com/repos/${ref.owner}/${ref.repo}/git/trees/${encodeURIComponent(ref.branch)}?recursive=1`,
+    token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
   );
+  if (res.status === 401) {
+    throw new Error(
+      `GitHub rejected that token. Check it's still valid and has read access to "${ref.owner}/${ref.repo}".`
+    );
+  }
   if (res.status === 404) {
     // The GitHub API returns 404 (not 403) both when a repo genuinely
-    // doesn't exist and when it's private and this unauthenticated
-    // request can't see it — it doesn't distinguish, on purpose, so
-    // neither can this message. Also the most common cause for anyone
-    // pasting a real repo: the saved branch name isn't the repo's actual
-    // default branch (e.g. "main" saved for a repo whose default is
-    // "master").
+    // doesn't exist and when the request can't see it (private, and
+    // either no token was given or the token lacks access) — it doesn't
+    // distinguish, on purpose, so neither can this message. Also the most
+    // common cause for anyone pasting a real repo: the saved branch name
+    // isn't the repo's actual default branch (e.g. "main" saved for a
+    // repo whose default is "master").
     throw new Error(
-      `Couldn't find "${ref.owner}/${ref.repo}" on branch "${ref.branch}". Double-check the owner/repo ` +
-        `spelling, that the repo is public (this runs without a GitHub token), and that "${ref.branch}" ` +
-        `matches the repo's actual default branch on GitHub.`
+      token
+        ? `Couldn't find "${ref.owner}/${ref.repo}" on branch "${ref.branch}", even with a token. Double-check ` +
+            `the owner/repo spelling, that the token has access to this repo, and that "${ref.branch}" matches ` +
+            `the repo's actual default branch on GitHub.`
+        : `Couldn't find "${ref.owner}/${ref.repo}" on branch "${ref.branch}". Double-check the owner/repo ` +
+            `spelling, that the repo is public (paste a token above if it's private), and that "${ref.branch}" ` +
+            `matches the repo's actual default branch on GitHub.`
     );
   }
   if (!res.ok) {
