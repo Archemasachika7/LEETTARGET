@@ -84,9 +84,27 @@ export interface ExtensionSetupCode {
 
 /** Display profile shown in the site header/profile tab — separate from
  * Supabase Auth identity (which owns email/GitHub login) and from
- * leetcode_profiles (sync plumbing, not user-facing). */
+ * leetcode_profiles (sync plumbing, not user-facing). Readable by any
+ * signed-in user (see migration 0004_leaderboard.sql) — only its owner can
+ * write it. */
 export interface Profile {
   userId: string;
+  displayName?: string;
   bio?: string;
   avatarUrl?: string;
+}
+
+/** One row of the public leaderboard — every signed-in user with at least
+ * one target or solve, ranked by `solvedCount`. Backed by the `leaderboard`
+ * SQL view (migration 0004_leaderboard.sql), which only ever exposes what
+ * each underlying table's RLS policies already allow. */
+export interface LeaderboardEntry {
+  userId: string;
+  displayName?: string;
+  avatarUrl?: string;
+  bio?: string;
+  leetcodeUsername?: string;
+  solvedCount: number;
+  targetCount: number;
+  doneCount: number;
 }

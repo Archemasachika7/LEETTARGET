@@ -1,7 +1,7 @@
 import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import type { Profile } from "@leettarget/shared";
-import { getLeetCodeUsername, getProfile, upsertProfileBio, uploadAvatar } from "../lib/api.js";
+import { getLeetCodeUsername, getProfile, upsertProfileDetails, uploadAvatar } from "../lib/api.js";
 
 interface Props {
   userId: string;
@@ -9,18 +9,20 @@ interface Props {
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
-/** Avatar + bio, shown on the Settings tab. Both are optional and
- * independent — uploading a photo doesn't require a bio and vice versa,
- * each saves on its own. Also surfaces the linked LeetCode username
- * read-only, as an at-a-glance "this is who's signed in" — it's actually
- * set/changed from the Dashboard's "Import from LeetCode" section, so
- * there's one place that owns that flow rather than two. */
+/** Avatar + display name + bio, shown on the Settings tab. Uploading a
+ * photo is independent of the name/bio form — each saves on its own.
+ * Display name and bio are also what a leaderboard row shows for this
+ * user (see the "Leaderboard" tab) — this is the public-facing identity,
+ * separate from the LeetCode username shown read-only below (that's
+ * actually set/changed from the Dashboard's "Import from LeetCode"
+ * section, so there's one place that owns that flow rather than two). */
 export function ProfileForm({ userId }: Props) {
   const [profile, setProfile] = useState<Profile>();
+  const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [leetCodeUsername, setLeetCodeUsernameDisplay] = useState<string>();
   const [uploading, setUploading] = useState(false);
-  const [savingBio, setSavingBio] = useState(false);
+  const [savingDetails, setSavingDetails] = useState(false);
   const [error, setError] = useState<string>();
   const [saved, setSaved] = useState(false);
 
@@ -28,6 +30,7 @@ export function ProfileForm({ userId }: Props) {
     getProfile(userId)
       .then((p) => {
         setProfile(p);
+        setDisplayName(p?.displayName ?? "");
         setBio(p?.bio ?? "");
       })
       .catch((err) => setError(getErrorMessage(err)));
@@ -53,7 +56,7 @@ export function ProfileForm({ userId }: Props) {
     setError(undefined);
     try {
       const avatarUrl = await uploadAvatar(userId, file);
-      setProfile((prev) => ({ userId, bio: prev?.bio, avatarUrl }));
+      setProfile((prev) => ({ userId, displayName: prev?.displayName, bio: prev?.bio, avatarUrl }));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -61,26 +64,32 @@ export function ProfileForm({ userId }: Props) {
     }
   }
 
-  async function handleBioSubmit(e: FormEvent) {
+  async function handleDetailsSubmit(e: FormEvent) {
     e.preventDefault();
-    setSavingBio(true);
+    setSavingDetails(true);
     setError(undefined);
     try {
-      await upsertProfileBio(userId, bio);
-      setProfile((prev) => ({ userId, avatarUrl: prev?.avatarUrl, bio }));
+      await upsertProfileDetails(userId, { bio, displayName });
+      setProfile((prev) => ({ userId, avatarUrl: prev?.avatarUrl, displayName, bio }));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
-      setSavingBio(false);
+      setSavingDetails(false);
     }
   }
+
+  const detailsChanged = displayName !== (profile?.displayName ?? "") || bio !== (profile?.bio ?? "");
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-800">
       <h3 className="font-semibold text-slate-900 dark:text-slate-100">Profile</h3>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        Shown on the leaderboard — your name/bio here, and the difficulty breakdown and target list from
+        the rest of the app, are visible to other signed-in users.
+      </p>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
         LeetCode:{" "}
         {leetCodeUsername ? (
           <span className="font-medium text-slate-700 dark:text-slate-300">{leetCodeUsername}</span>
@@ -115,26 +124,41 @@ export function ProfileForm({ userId }: Props) {
         </label>
       </div>
 
-      <form onSubmit={handleBioSubmit} className="mt-4">
-        <label htmlFor="bio" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-          Bio
-        </label>
-        <textarea
-          id="bio"
-          rows={3}
-          maxLength={280}
-          placeholder="A short line about your LeetCode journey..."
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          className="mt-1 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 transition-colors duration-200 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-        />
-        <div className="mt-2 flex items-center gap-3">
+      <form onSubmit={handleDetailsSubmit} className="mt-4 flex flex-col gap-3">
+        <div>
+          <label htmlFor="displayName" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Display name
+          </label>
+          <input
+            id="displayName"
+            maxLength={60}
+            placeholder="Shown on the leaderboard instead of a blank row"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="mt-1 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 transition-colors duration-200 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+          />
+        </div>
+        <div>
+          <label htmlFor="bio" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Bio
+          </label>
+          <textarea
+            id="bio"
+            rows={3}
+            maxLength={280}
+            placeholder="A short line about your LeetCode journey..."
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            className="mt-1 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 transition-colors duration-200 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+          />
+        </div>
+        <div className="flex items-center gap-3">
           <button
             type="submit"
-            disabled={savingBio || bio === (profile?.bio ?? "")}
+            disabled={savingDetails || !detailsChanged}
             className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white transition-colors duration-200 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
           >
-            {savingBio ? "Saving..." : "Save bio"}
+            {savingDetails ? "Saving..." : "Save"}
           </button>
           {saved && <span className="text-sm text-green-700 dark:text-green-400">Saved.</span>}
         </div>

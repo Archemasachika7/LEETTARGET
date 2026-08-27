@@ -1,5 +1,6 @@
 import type {
   GithubLink,
+  LeaderboardEntry,
   LeetCodeSolvedSummary,
   Problem,
   Profile,
@@ -331,10 +332,16 @@ export async function getProfile(userId: string): Promise<Profile | undefined> {
   return data ? rowToProfile(data) : undefined;
 }
 
-export async function upsertProfileBio(userId: string, bio: string): Promise<void> {
-  const { error } = await requireClient()
-    .from("profiles")
-    .upsert({ user_id: userId, bio, updated_at: new Date().toISOString() });
+export async function upsertProfileDetails(
+  userId: string,
+  details: { bio: string; displayName: string }
+): Promise<void> {
+  const { error } = await requireClient().from("profiles").upsert({
+    user_id: userId,
+    bio: details.bio,
+    display_name: details.displayName,
+    updated_at: new Date().toISOString(),
+  });
   if (error) throw error;
 }
 
@@ -363,6 +370,29 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
   if (profileError) throw profileError;
 
   return avatarUrl;
+}
+
+/** Every signed-in user with at least one target or solve, ranked by solved
+ * count — backed by the `leaderboard` view (migration
+ * 0004_leaderboard.sql), which only ever exposes what each underlying
+ * table's own RLS policies already allow. */
+export async function listLeaderboard(): Promise<LeaderboardEntry[]> {
+  const { data, error } = await requireClient()
+    .from("leaderboard")
+    .select("*")
+    .order("solved_count", { ascending: false });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((row: any) => ({
+    userId: row.user_id,
+    displayName: row.display_name ?? undefined,
+    avatarUrl: row.avatar_url ?? undefined,
+    bio: row.bio ?? undefined,
+    leetcodeUsername: row.leetcode_username ?? undefined,
+    solvedCount: row.solved_count,
+    targetCount: row.target_count,
+    doneCount: row.done_count,
+  }));
 }
 
 // --- LeetCode import -------------------------------------------------------
@@ -753,6 +783,7 @@ function rowToProblem(row: any): Problem {
 function rowToProfile(row: any): Profile {
   return {
     userId: row.user_id,
+    displayName: row.display_name ?? undefined,
     bio: row.bio ?? undefined,
     avatarUrl: row.avatar_url ?? undefined,
   };
