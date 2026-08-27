@@ -4,10 +4,12 @@ import { useUserData } from "../lib/userData.js";
 import { deleteTarget, listDetailedTargets, type DetailedTarget } from "../lib/api.js";
 import { downloadTargetsAsCsv } from "../lib/downloadCsv.js";
 import { getErrorMessage } from "../lib/errors.js";
+import { useStudyDesk } from "../lib/studyDesk.js";
 import { AddTargetForm } from "../components/AddTargetForm.js";
 import { CsvUploader } from "../components/CsvUploader.js";
 import { TargetsTable } from "../components/TargetsTable.js";
 import { PracticeSession } from "../components/practice/PracticeSession.js";
+import { StuckDesk } from "../components/study/StuckDesk.js";
 import {
   Button,
   Card,
@@ -22,6 +24,7 @@ import {
  * session draws from. The session leads, because working the queue is the
  * point and list management is the setup for it. */
 export function PracticePage() {
+  const { mode } = useStudyDesk();
   const { userId, targets, refresh, refreshTick, loading } = useUserData();
   const toast = useToast();
   const [error, setError] = useState<string>();
@@ -46,6 +49,11 @@ export function PracticePage() {
 
   const done = targets.filter((t) => t.status === "done").length;
   const hasTargets = targets.length > 0;
+
+  // GATE and CAT are purposefully independent from LeetCode targets. Their
+  // work is a concise recall desk, not a second attempt to force exam questions
+  // through the coding-problem and GitHub-sync schema.
+  if (mode !== "leetcode") return <StuckDesk mode={mode} />;
 
   return (
     <div className="flex flex-col gap-8">

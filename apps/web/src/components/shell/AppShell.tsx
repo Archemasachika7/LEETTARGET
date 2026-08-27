@@ -1,10 +1,11 @@
 import { type ReactNode } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Target, Map, TrendingUp, User, Moon, Sun, LogOut } from "lucide-react";
 import { Logo, LogoMark } from "../brand/Logo.js";
 import { Tooltip } from "../../ui/index.js";
 import { cn } from "../../lib/cn.js";
 import type { Theme } from "../../lib/theme.js";
+import { TrackSwitcher } from "../study/TrackSwitcher.js";
 
 /** The primary destinations, in the order of the product loop: see status
  * (Dashboard) → solve (Practice) → see where that's heading
@@ -28,6 +29,7 @@ interface Props {
 
 export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-bg bg-grid">
@@ -48,6 +50,10 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
           {/* Desktop navigation. Hidden on small screens, where the bottom bar
            * takes over — duplicating both would waste vertical space on the
            * viewport that has least of it. */}
+          <div className="hidden xl:block">
+            <TrackSwitcher onTrackChange={() => navigate("/practice")} />
+          </div>
+
           <nav className="hidden flex-1 items-center gap-1 md:flex" aria-label="Primary">
             {NAV.map(({ to, label, end }) => (
               <NavLink
@@ -96,6 +102,12 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
 
       {/* `key` on the route path restarts the enter animation on navigation —
        * a 6px rise, not a flight across the screen. */}
+      <div className="border-b border-border bg-bg/70 px-4 py-2 sm:px-6 xl:hidden">
+        <div className="mx-auto max-w-content overflow-x-auto">
+          <TrackSwitcher onTrackChange={() => navigate("/practice")} />
+        </div>
+      </div>
+
       <main
         id="main"
         key={location.pathname}

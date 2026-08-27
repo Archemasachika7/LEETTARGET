@@ -4,6 +4,7 @@ import { ArrowRight, ListChecks } from "lucide-react";
 import { summariseStreaks, type UserGoals } from "@leettarget/shared";
 import { useUserData } from "../lib/userData.js";
 import { useTopics } from "../lib/useTopics.js";
+import { useStudyDesk } from "../lib/studyDesk.js";
 import { getUserGoals } from "../lib/api.js";
 import { recommendNext } from "../lib/recommend.js";
 import { ProgressSummary } from "../components/ProgressSummary.js";
@@ -15,6 +16,7 @@ import { NoGoalsCard, TodayCard } from "../components/dashboard/TodayCard.js";
 import { ActivityStrip } from "../components/dashboard/ActivityStrip.js";
 import { FocusAreas } from "../components/dashboard/FocusAreas.js";
 import { GoalsForm } from "../components/dashboard/GoalsForm.js";
+import { StudyTrackDashboard } from "../components/study/StudyTrackDashboard.js";
 import { Button, Card, EmptyState, SectionHeader, Skeleton, SkeletonRows } from "../ui/index.js";
 
 function greeting(now: Date): string {
@@ -31,6 +33,7 @@ function greeting(now: Date): string {
  * narrative (managing the target list, configuring integrations) lives on
  * another route rather than competing for attention. */
 export function DashboardPage() {
+  const { mode } = useStudyDesk();
   const { userId, targets, solved, refreshTick, refresh, loading } = useUserData();
   const [goals, setGoals] = useState<UserGoals>();
   const [goalsLoaded, setGoalsLoaded] = useState(false);
@@ -50,6 +53,10 @@ export function DashboardPage() {
   const { focus } = useTopics(userId, refreshTick);
 
   const pendingCount = targets.filter((t) => t.status === "pending").length;
+
+  // Keep the original LeetCode dashboard exactly as its own progression system.
+  // The exam modes intentionally have their own lighter recall workspace.
+  if (mode !== "leetcode") return <StudyTrackDashboard mode={mode} />;
 
   return (
     <div className="flex flex-col gap-8">

@@ -4,6 +4,7 @@ import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabaseClient.js";
 import { applyTheme, getInitialTheme, type Theme } from "./lib/theme.js";
 import { UserDataProvider } from "./lib/userData.js";
+import { StudyDeskProvider } from "./lib/studyDesk.js";
 import { AppShell } from "./components/shell/AppShell.js";
 import { Logo, LogoMark } from "./components/brand/Logo.js";
 import { ArrowUpRight, Check, CircleDot, GitBranch, ListChecks } from "lucide-react";
@@ -75,18 +76,20 @@ function SignedInApp({ supabase }: { supabase: SupabaseClient }) {
     <ToastProvider>
       <BrowserRouter>
         <UserDataProvider userId={session.user.id}>
-          <AppShell theme={theme} onToggleTheme={toggleTheme} onSignOut={() => supabase.auth.signOut()}>
-            <Routes>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/practice" element={<PracticePage />} />
-              <Route path="/roadmap" element={<RoadmapPage />} />
-              <Route path="/progress" element={<ProgressPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              {/* Anything unrecognised lands on the dashboard rather than a
-               * dead end — there's no deep content worth a 404 page here. */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </AppShell>
+          <StudyDeskProvider userId={session.user.id}>
+            <AppShell theme={theme} onToggleTheme={toggleTheme} onSignOut={() => supabase.auth.signOut()}>
+              <Routes>
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/practice" element={<PracticePage />} />
+                <Route path="/roadmap" element={<RoadmapPage />} />
+                <Route path="/progress" element={<ProgressPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                {/* Anything unrecognised lands on the dashboard rather than a
+                 * dead end — there's no deep content worth a 404 page here. */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </AppShell>
+          </StudyDeskProvider>
         </UserDataProvider>
       </BrowserRouter>
     </ToastProvider>
@@ -118,25 +121,25 @@ function SignInScreen({ supabase }: { supabase: SupabaseClient }) {
               A quieter way to get better
             </div>
             <h1 className="max-w-lg text-4xl font-semibold leading-[1.04] tracking-[-0.045em] text-text sm:text-5xl lg:text-[3.65rem]">
-              Let every solved problem point somewhere.
+              Let every difficult problem point somewhere.
             </h1>
             <p className="mt-6 max-w-lg text-base leading-7 text-text-secondary sm:text-[17px]">
-              LeetTarget turns scattered LeetCode sessions into a considered practice loop: choose a focus, see the
-              pattern in your progress, and keep a clean line back to the code you write.
+              LeetTarget turns scattered coding, GATE and CAT sessions into a considered practice loop: choose a
+              focus, notice the pattern in your progress, and leave yourself a clean way back into difficult work.
             </p>
 
             <dl className="mt-10 grid gap-5 border-t border-border pt-6 sm:grid-cols-3">
               <div>
-                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">01 / Direct</dt>
-                <dd className="mt-2 text-sm font-medium text-text">Set a target worth returning to</dd>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">01 / LeetCode</dt>
+                <dd className="mt-2 text-sm font-medium text-text">Keep coding practice deliberate</dd>
               </div>
               <div>
-                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">02 / Visible</dt>
-                <dd className="mt-2 text-sm font-medium text-text">Notice the work you are repeating</dd>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">02 / GATE</dt>
+                <dd className="mt-2 text-sm font-medium text-text">Return to concepts that need time</dd>
               </div>
               <div>
-                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">03 / Yours</dt>
-                <dd className="mt-2 text-sm font-medium text-text">Link each solution to its repository</dd>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">03 / CAT</dt>
+                <dd className="mt-2 text-sm font-medium text-text">Learn from a missed method or set</dd>
               </div>
             </dl>
           </section>
@@ -154,7 +157,7 @@ function SignInScreen({ supabase }: { supabase: SupabaseClient }) {
             </div>
 
             <p className="mt-3 max-w-md text-sm leading-6 text-text-secondary">
-              Sign in to set your pace, organise topics and connect the work you solve with the work you ship.
+              Sign in to organise coding practice, revisit GATE concepts and keep CAT methods close when they need another pass.
             </p>
 
             <Button
