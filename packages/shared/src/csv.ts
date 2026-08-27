@@ -144,3 +144,17 @@ export function parseTargetsCsv(text: string): CsvTargetRow[] {
 
   return targets;
 }
+
+function csvEscape(value: string): string {
+  return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+/** Serializes targets back into the same `Question,Link,Status` shape
+ * `parseTargetsCsv` reads — lets a target list round-trip out to a
+ * spreadsheet, or into someone else's account ("adopt their target list as
+ * my own competition set"), and back in. */
+export function exportTargetsCsv(targets: { title: string; url: string; status?: string }[]): string {
+  const header = "Question,Link,Status";
+  const rows = targets.map((t) => [csvEscape(t.title), csvEscape(t.url), csvEscape(t.status ?? "")].join(","));
+  return [header, ...rows].join("\r\n") + "\r\n";
+}

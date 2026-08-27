@@ -5,6 +5,7 @@ import type { SolvedProblem, Target } from "@leettarget/shared";
 import { isSupabaseConfigured, supabase } from "./lib/supabaseClient.js";
 import { deleteTarget, listSolvedProblems, listTargets } from "./lib/api.js";
 import { applyTheme, getInitialTheme, type Theme } from "./lib/theme.js";
+import { downloadTargetsAsCsv } from "./lib/downloadCsv.js";
 import { CsvUploader } from "./components/CsvUploader.js";
 import { ImportLeetCode } from "./components/ImportLeetCode.js";
 import { AddTargetForm } from "./components/AddTargetForm.js";
@@ -15,6 +16,7 @@ import { DifficultyBreakdown } from "./components/DifficultyBreakdown.js";
 import { SolutionMappingTable } from "./components/SolutionMappingTable.js";
 import { ExtensionSetup } from "./components/ExtensionSetup.js";
 import { ProfileForm } from "./components/ProfileForm.js";
+import { Leaderboard } from "./components/Leaderboard.js";
 
 export default function App() {
   if (!isSupabaseConfigured || !supabase) {
@@ -93,7 +95,7 @@ function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }
   );
 }
 
-type Tab = "dashboard" | "targets" | "solved" | "settings";
+type Tab = "dashboard" | "targets" | "solved" | "leaderboard" | "settings";
 
 function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -147,7 +149,7 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
         </header>
 
         <nav className="mt-6 flex gap-4 border-b border-slate-200 text-sm dark:border-slate-700">
-          {(["dashboard", "targets", "solved", "settings"] as const).map((t) => (
+          {(["dashboard", "targets", "solved", "leaderboard", "settings"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -164,7 +166,9 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
                   ? "Targets"
                   : t === "solved"
                     ? "Solved"
-                    : "Settings"}
+                    : t === "leaderboard"
+                      ? "Leaderboard"
+                      : "Settings"}
             </button>
           ))}
         </nav>
@@ -189,7 +193,17 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
               <AddTargetForm userId={userId} onAdded={refresh} />
               <CsvUploader userId={userId} targets={targets} onImported={refresh} />
               <div>
-                <h2 className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">All targets</h2>
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-sm font-medium text-slate-700 dark:text-slate-300">All targets</h2>
+                  {targets.length > 0 && (
+                    <button
+                      onClick={() => downloadTargetsAsCsv(targets, "my-targets")}
+                      className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 transition-colors duration-200 dark:border-slate-600 dark:text-slate-300"
+                    >
+                      Download CSV
+                    </button>
+                  )}
+                </div>
                 <TargetsTable targets={targets} onRemove={handleRemove} />
               </div>
             </>
@@ -206,6 +220,8 @@ function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => voi
               <SolutionMappingTable userId={userId} refreshKey={refreshTick} />
             </div>
           )}
+
+          {tab === "leaderboard" && <Leaderboard currentUserId={userId} />}
 
           {tab === "settings" && (
             <>
