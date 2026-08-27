@@ -2,7 +2,14 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "noEmit": true
+    "noEmit": true,
+    // Source files keep the repo's ".js" specifier convention for the
+    // bundlers in apps/web and apps/extension. Test files are the exception:
+    // `node --test` strips types and runs them directly, and its resolver
+    // takes specifiers literally — so they import "./x.ts". Safe here because
+    // nothing is ever emitted from this package.
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
   },
   "include": ["src"]
 }

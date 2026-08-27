@@ -7,6 +7,7 @@ import type {
   SolvedProblem,
   Target,
   TargetSource,
+  UserGoals,
 } from "@leettarget/shared";
 import {
   fetchQuestionDifficulty,
@@ -395,6 +396,40 @@ export async function listLeaderboard(): Promise<LeaderboardEntry[]> {
   }));
 }
 
+// --- goals -----------------------------------------------------------------
+
+/** Returns undefined when the user has never set goals — the dashboard reads
+ * that absence as "onboarding hasn't happened", so it must not be papered
+ * over with defaults here. */
+export async function getUserGoals(userId: string): Promise<UserGoals | undefined> {
+  const { data, error } = await requireClient()
+    .from("user_goals")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? rowToGoals(data) : undefined;
+}
+
+export async function upsertUserGoals(
+  userId: string,
+  goals: Omit<UserGoals, "userId" | "onboardedAt"> & { markOnboarded?: boolean }
+): Promise<void> {
+  const { error } = await requireClient()
+    .from("user_goals")
+    .upsert({
+      user_id: userId,
+      daily_target: goals.dailyTarget,
+      weekly_target: goals.weeklyTarget,
+      focus: goals.focus ?? null,
+      goal_total: goals.goalTotal ?? null,
+      goal_deadline: goals.goalDeadline ?? null,
+      ...(goals.markOnboarded ? { onboarded_at: new Date().toISOString() } : {}),
+      updated_at: new Date().toISOString(),
+    });
+  if (error) throw error;
+}
+
 // --- LeetCode import -------------------------------------------------------
 
 export interface LeetCodeImportResult {
@@ -776,6 +811,19 @@ function rowToProblem(row: any): Problem {
     url: row.url,
     difficulty: row.difficulty,
     tags: row.tags ?? [],
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowToGoals(row: any): UserGoals {
+  return {
+    userId: row.user_id,
+    dailyTarget: row.daily_target,
+    weeklyTarget: row.weekly_target,
+    focus: row.focus ?? undefined,
+    goalTotal: row.goal_total ?? undefined,
+    goalDeadline: row.goal_deadline ?? undefined,
+    onboardedAt: row.onboarded_at ?? undefined,
   };
 }
 

@@ -94,6 +94,28 @@ export interface Profile {
   avatarUrl?: string;
 }
 
+export type PracticeFocus = "interview" | "competitive" | "fundamentals" | "general";
+
+/** A user's practice goals — the numbers the dashboard measures a day and a
+ * week against. Private to their owner (unlike profiles/targets/solves, which
+ * the leaderboard opens up). Absence of a row means onboarding hasn't run. */
+export interface UserGoals {
+  userId: string;
+  dailyTarget: number;
+  weeklyTarget: number;
+  focus?: PracticeFocus;
+  goalTotal?: number;
+  goalDeadline?: string;
+  onboardedAt?: string;
+}
+
+/** What a brand-new user gets before they've chosen anything — also the
+ * values the onboarding form opens on. */
+export const DEFAULT_GOALS: Pick<UserGoals, "dailyTarget" | "weeklyTarget"> = {
+  dailyTarget: 3,
+  weeklyTarget: 15,
+};
+
 /** One row of the public leaderboard — every signed-in user with at least
  * one target or solve, ranked by `solvedCount`. Backed by the `leaderboard`
  * SQL view (migration 0004_leaderboard.sql), which only ever exposes what
