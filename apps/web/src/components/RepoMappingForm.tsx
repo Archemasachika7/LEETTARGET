@@ -67,7 +67,8 @@ export function RepoMappingForm({ userId, onSynced }: Props) {
       setSyncResult(
         result.matched === 0
           ? "No matching problems found in that repo."
-          : `Found ${result.matched} solved problem${result.matched === 1 ? "" : "s"} in the repo — ${result.newlySynced} newly synced.`
+          : `Found ${result.matched} solved problem${result.matched === 1 ? "" : "s"} in the repo — ` +
+              `${result.newlySynced} newly synced, ${result.pathsFilled} file path${result.pathsFilled === 1 ? "" : "s"} filled in.`
       );
       onSynced?.();
     } catch (err) {

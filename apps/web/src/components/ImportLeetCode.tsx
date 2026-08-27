@@ -83,11 +83,16 @@ export function ImportLeetCode({ userId, onImported }: Props) {
         Backfills recent solves from a public profile — handy before the extension has seen everything.
       </p>
 
-      {savedUsername && (
+      {savedUsername ? (
         <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
           Auto-imports daily at 9pm IST for{" "}
           <span className="font-medium text-slate-600 dark:text-slate-300">{savedUsername}</span>. "Sync
           now" runs it immediately.
+        </p>
+      ) : (
+        <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+          "Sync now" (above) is grayed out until you import a username at least once — enter one below and
+          click Import.
         </p>
       )}
 

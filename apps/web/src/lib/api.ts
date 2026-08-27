@@ -168,9 +168,13 @@ export interface GithubSyncResult {
    * recognized, whether or not it was already recorded. */
   matched: number;
   /** Of those, how many were new `solved_problems` rows this run actually
-   * inserted — existing rows (e.g. one the user already hand-corrected in
-   * the solution mapping table) are left untouched, never overwritten. */
+   * inserted. */
   newlySynced: number;
+  /** How many already-recorded solves had their `github_path` filled in
+   * from this scan — e.g. one imported earlier via a LeetCode username
+   * import, which doesn't know a file path. Never overwrites a path that
+   * was already set (a prior sync's match, or a manual correction). */
+  pathsFilled: number;
 }
 
 /** Backfills solved status from a repo that already has solutions
@@ -194,7 +198,7 @@ export async function syncFromGithubRepo(
     { owner: link.owner, repo: link.repo, branch: link.branch },
     { token: githubToken }
   );
-  if (candidates.size === 0) return { matched: 0, newlySynced: 0 };
+  if (candidates.size === 0) return { matched: 0, newlySynced: 0, pathsFilled: 0 };
 
   const slugs = [...candidates.keys()];
   const client = requireClient();
@@ -246,7 +250,7 @@ export async function syncFromGithubRepo(
   }
 
   const matchedSlugs = slugs.filter((slug) => problemBySlug.has(slug));
-  if (matchedSlugs.length === 0) return { matched: 0, newlySynced: 0 };
+  if (matchedSlugs.length === 0) return { matched: 0, newlySynced: 0, pathsFilled: 0 };
 
   // Same enrichment as a LeetCode import — otherwise every repo-matched
   // solve whose problem row was just created above would sit at "Unknown"
@@ -266,16 +270,21 @@ export async function syncFromGithubRepo(
   }
 
   const problemIds = matchedSlugs.map((slug) => problemBySlug.get(slug)!.id);
-  const { data: alreadySolved, error: alreadySolvedError } = await client
+  const { data: existingSolved, error: existingSolvedError } = await client
     .from("solved_problems")
-    .select("problem_id")
+    .select("id, problem_id, github_path")
     .eq("user_id", userId)
     .in("problem_id", problemIds);
-  if (alreadySolvedError) throw alreadySolvedError;
-  const alreadySolvedIds = new Set((alreadySolved ?? []).map((s) => s.problem_id as string));
+  if (existingSolvedError) throw existingSolvedError;
+  const existingByProblemId = new Map(
+    (existingSolved ?? []).map((s) => [
+      s.problem_id as string,
+      { id: s.id as string, githubPath: s.github_path as string | null },
+    ])
+  );
 
   const newSolvedRows = matchedSlugs
-    .filter((slug) => !alreadySolvedIds.has(problemBySlug.get(slug)!.id))
+    .filter((slug) => !existingByProblemId.has(problemBySlug.get(slug)!.id))
     .map((slug) => ({
       user_id: userId,
       problem_id: problemBySlug.get(slug)!.id,
@@ -287,9 +296,27 @@ export async function syncFromGithubRepo(
     if (solvedError) throw solvedError;
   }
 
+  // A solve recorded before this repo was ever scanned (e.g. via a
+  // LeetCode username import, which has no way to know a file path) sits
+  // with `github_path` empty forever unless something fills it in later.
+  // Now that the scan found the real file, attach it — but only where
+  // nothing is set yet, so a prior sync's match or a manual correction in
+  // the solution mapping table is never overwritten.
+  let pathsFilled = 0;
+  for (const slug of matchedSlugs) {
+    const existing = existingByProblemId.get(problemBySlug.get(slug)!.id);
+    if (!existing || existing.githubPath) continue;
+    const { error: pathUpdateError } = await client
+      .from("solved_problems")
+      .update({ github_path: candidates.get(slug) })
+      .eq("id", existing.id);
+    if (pathUpdateError) throw pathUpdateError;
+    pathsFilled++;
+  }
+
   await markAlreadySolvedTargetsDone(client, userId, matchedSlugs);
 
-  return { matched: matchedSlugs.length, newlySynced: newSolvedRows.length };
+  return { matched: matchedSlugs.length, newlySynced: newSolvedRows.length, pathsFilled };
 }
 
 // --- profile ---------------------------------------------------------------
