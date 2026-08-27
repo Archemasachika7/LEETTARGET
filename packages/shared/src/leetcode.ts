@@ -48,6 +48,14 @@ query questionDifficulty($titleSlug: String!) {
   }
 }`;
 
+const QUESTION_META_QUERY = `
+query questionMeta($titleSlug: String!) {
+  question(titleSlug: $titleSlug) {
+    difficulty
+    topicTags { name slug }
+  }
+}`;
+
 const RECENT_SUBMISSIONS_QUERY = `
 query recentAcSubmissions($username: String!, $limit: Int!) {
   recentAcSubmissionList(username: $username, limit: $limit) {
@@ -195,6 +203,58 @@ export async function fetchQuestionDifficulty(
     return "Unknown";
   } catch {
     return "Unknown";
+  }
+}
+
+export interface LeetCodeQuestionMeta {
+  difficulty: Problem["difficulty"];
+  /** LeetCode's own topic tags ("Array", "Dynamic Programming", …), lifted
+   * verbatim. These are the only real topic signal available — nothing in
+   * LeetTarget infers or invents a topic for a problem. */
+  topics: string[];
+}
+
+/** Fetches difficulty *and* topic tags in one request. Used to populate
+ * `problems.tags`, which starts empty and is what topic mastery, focus areas
+ * and the roadmap are all built on. Fails soft to "Unknown" with no topics —
+ * a missing tag should degrade the roadmap, not break the page. */
+export async function fetchQuestionMeta(
+  slug: string,
+  options?: LeetCodeClientOptions
+): Promise<LeetCodeQuestionMeta> {
+  const empty: LeetCodeQuestionMeta = { difficulty: "Unknown", topics: [] };
+  try {
+    const { endpoint = LEETCODE_GRAPHQL_ENDPOINT, proxyUrl, proxyApiKey, fetchImpl = fetch } = options ?? {};
+    const [url, body] = proxyUrl
+      ? [proxyUrl, { op: "meta", slug }]
+      : [endpoint, { query: QUESTION_META_QUERY, variables: { titleSlug: slug } }];
+
+    const res = await fetchImpl(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(proxyUrl && proxyApiKey ? { apikey: proxyApiKey, Authorization: `Bearer ${proxyApiKey}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) return empty;
+
+    const json = (await res.json()) as {
+      data?: { question: { difficulty?: string; topicTags?: { name?: string }[] } | null };
+    };
+    const question = json.data?.question;
+    if (!question) return empty;
+
+    const difficulty = question.difficulty;
+    return {
+      difficulty:
+        difficulty === "Easy" || difficulty === "Medium" || difficulty === "Hard" ? difficulty : "Unknown",
+      topics: (question.topicTags ?? [])
+        .map((t) => t.name)
+        .filter((name): name is string => Boolean(name)),
+    };
+  } catch {
+    return empty;
   }
 }
 

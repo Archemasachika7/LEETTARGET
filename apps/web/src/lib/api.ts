@@ -7,10 +7,12 @@ import type {
   SolvedProblem,
   Target,
   TargetSource,
+  TopicProblem,
   UserGoals,
 } from "@leettarget/shared";
 import {
   fetchQuestionDifficulty,
+  fetchQuestionMeta,
   fetchRecentAcSubmissions,
   fetchRepoSolvedSlugs,
   fetchSolvedSummary,
@@ -394,6 +396,104 @@ export async function listLeaderboard(): Promise<LeaderboardEntry[]> {
     targetCount: row.target_count,
     doneCount: row.done_count,
   }));
+}
+
+// --- topics ----------------------------------------------------------------
+
+/** Every problem in this user's world — the ones they've solved, plus the
+ * ones their targets point at — with whatever topic tags are on record.
+ *
+ * Targets can name a problem that has no `problems` row yet (a CSV upload
+ * creates targets by slug without touching the catalogue), so those simply
+ * contribute nothing to topic mastery until something enriches them. */
+export async function listTopicProblems(userId: string): Promise<TopicProblem[]> {
+  const client = requireClient();
+
+  const { data: solvedRows, error: solvedError } = await client
+    .from("solved_problems")
+    .select("problem:problems(slug, tags)")
+    .eq("user_id", userId)
+    .returns<{ problem: { slug: string; tags: string[] | null } | null }[]>();
+  if (solvedError) throw solvedError;
+
+  const { data: targetRows, error: targetError } = await client
+    .from("targets")
+    .select("slug")
+    .eq("user_id", userId)
+    .not("slug", "is", null);
+  if (targetError) throw targetError;
+
+  const bySlug = new Map<string, TopicProblem>();
+  for (const row of solvedRows ?? []) {
+    if (!row.problem) continue;
+    bySlug.set(row.problem.slug, {
+      slug: row.problem.slug,
+      topics: row.problem.tags ?? [],
+      solved: true,
+    });
+  }
+
+  const targetSlugs = [...new Set((targetRows ?? []).map((t) => t.slug as string))].filter(
+    (slug) => !bySlug.has(slug)
+  );
+  if (targetSlugs.length > 0) {
+    const { data: problemRows, error: problemError } = await client
+      .from("problems")
+      .select("slug, tags")
+      .in("slug", targetSlugs);
+    if (problemError) throw problemError;
+    for (const row of problemRows ?? []) {
+      bySlug.set(row.slug as string, {
+        slug: row.slug as string,
+        topics: (row.tags as string[] | null) ?? [],
+        solved: false,
+      });
+    }
+  }
+
+  return [...bySlug.values()];
+}
+
+/** Populates `problems.tags` from LeetCode for problems in this user's set
+ * that have none yet. `tags` ships empty for every row, so without this
+ * topic mastery, focus areas and the roadmap have nothing to stand on.
+ *
+ * Bounded per call: enrichment is a nice-to-have that runs in the background,
+ * and a 275-problem list shouldn't fire hundreds of requests on one page
+ * load. Repeat visits pick up where the last one stopped. */
+export async function enrichMissingTopics(
+  userId: string,
+  proxyUrl: string,
+  maxPerRun = 25
+): Promise<number> {
+  const client = requireClient();
+  const problems = await listTopicProblems(userId);
+  const untagged = problems.filter((p) => p.topics.length === 0).slice(0, maxPerRun);
+  if (untagged.length === 0) return 0;
+
+  const proxyApiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  let updated = 0;
+
+  for (let i = 0; i < untagged.length; i += DIFFICULTY_FETCH_CONCURRENCY) {
+    const batch = untagged.slice(i, i + DIFFICULTY_FETCH_CONCURRENCY);
+    const metas = await Promise.all(
+      batch.map((p) => fetchQuestionMeta(p.slug, { proxyUrl, proxyApiKey }))
+    );
+
+    for (let j = 0; j < batch.length; j++) {
+      const meta = metas[j];
+      if (meta.topics.length === 0) continue;
+      // Difficulty rides along free, since the same request returned it.
+      const { error } = await client
+        .from("problems")
+        .update({ tags: meta.topics, ...(meta.difficulty !== "Unknown" ? { difficulty: meta.difficulty } : {}) })
+        .eq("slug", batch[j].slug);
+      if (error) throw error;
+      updated++;
+    }
+  }
+
+  return updated;
 }
 
 // --- goals -----------------------------------------------------------------

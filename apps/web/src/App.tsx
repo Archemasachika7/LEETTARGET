@@ -9,6 +9,7 @@ import { Logo, LogoMark } from "./components/brand/Logo.js";
 import { GithubIcon } from "./components/brand/GithubIcon.js";
 import { DashboardPage } from "./pages/DashboardPage.js";
 import { PracticePage } from "./pages/PracticePage.js";
+import { RoadmapPage } from "./pages/RoadmapPage.js";
 import { ProgressPage } from "./pages/ProgressPage.js";
 import { ProfilePage } from "./pages/ProfilePage.js";
 import { Button, Card, ToastProvider } from "./ui/index.js";
@@ -77,6 +78,7 @@ function SignedInApp({ supabase }: { supabase: SupabaseClient }) {
             <Routes>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/practice" element={<PracticePage />} />
+              <Route path="/roadmap" element={<RoadmapPage />} />
               <Route path="/progress" element={<ProgressPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               {/* Anything unrecognised lands on the dashboard rather than a

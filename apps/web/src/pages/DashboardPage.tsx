@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ListChecks } from "lucide-react";
 import { summariseStreaks, type UserGoals } from "@leettarget/shared";
 import { useUserData } from "../lib/userData.js";
+import { useTopics } from "../lib/useTopics.js";
 import { getUserGoals } from "../lib/api.js";
 import { recommendNext } from "../lib/recommend.js";
 import { ProgressSummary } from "../components/ProgressSummary.js";
@@ -12,6 +13,7 @@ import { TargetsTable } from "../components/TargetsTable.js";
 import { NextTarget } from "../components/dashboard/NextTarget.js";
 import { NoGoalsCard, TodayCard } from "../components/dashboard/TodayCard.js";
 import { ActivityStrip } from "../components/dashboard/ActivityStrip.js";
+import { FocusAreas } from "../components/dashboard/FocusAreas.js";
 import { GoalsForm } from "../components/dashboard/GoalsForm.js";
 import { Button, Card, EmptyState, SectionHeader, Skeleton, SkeletonRows } from "../ui/index.js";
 
@@ -45,6 +47,7 @@ export function DashboardPage() {
     [solved]
   );
   const recommendations = useMemo(() => recommendNext(targets, 3), [targets]);
+  const { focus } = useTopics(userId, refreshTick);
 
   const pendingCount = targets.filter((t) => t.status === "pending").length;
 
@@ -81,6 +84,8 @@ export function DashboardPage() {
         <DifficultyBreakdown userId={userId} refreshKey={refreshTick} />
         <ActivityStrip solved={solved} />
       </div>
+
+      <FocusAreas focus={focus} />
 
       <ImportLeetCode userId={userId} onImported={refresh} />
 
