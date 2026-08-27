@@ -66,14 +66,23 @@ export function ImportLeetCode({ userId, onImported }: Props) {
     void runImport(username);
   }
 
+  // "Sync now" (header) and "Import" (form) trigger the exact same
+  // operation — the only reason to have both is so there's always a
+  // one-click re-sync in the header once a username exists, without
+  // making the reader retype it below. So "Sync now" uses whichever
+  // username is available: the saved one, or — if nothing's saved yet —
+  // whatever's currently typed in the field, rather than sitting
+  // permanently disabled until a separate first-time Import happens.
+  const syncTarget = (savedUsername ?? username).trim();
+
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-slate-900 dark:text-slate-100">Import from LeetCode</h3>
         <button
-          onClick={() => savedUsername && void runImport(savedUsername)}
-          disabled={loading || !savedUsername}
-          title={savedUsername ? undefined : "Import a username below first"}
+          onClick={() => syncTarget && void runImport(syncTarget)}
+          disabled={loading || !syncTarget}
+          title={syncTarget ? undefined : "Enter a username below first"}
           className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white transition-colors duration-200 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
         >
           {loading ? "Syncing..." : "Sync now"}
@@ -91,8 +100,7 @@ export function ImportLeetCode({ userId, onImported }: Props) {
         </p>
       ) : (
         <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-          "Sync now" (above) is grayed out until you import a username at least once — enter one below and
-          click Import.
+          Enter your LeetCode username below, then either button runs the same import.
         </p>
       )}
 

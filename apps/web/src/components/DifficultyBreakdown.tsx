@@ -1,6 +1,11 @@
 import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState } from "react";
-import { backfillUnknownDifficulties, getSolvedByDifficulty, type DifficultyCounts } from "../lib/api.js";
+import {
+  backfillUnknownDifficulties,
+  checkDifficultyProxyHealth,
+  getSolvedByDifficulty,
+  type DifficultyCounts,
+} from "../lib/api.js";
 import { leetCodeProxyUrl } from "../lib/leetcodeConfig.js";
 
 interface Props {
@@ -29,9 +34,11 @@ const TIER_COLORS = {
 export function DifficultyBreakdown({ userId, refreshKey }: Props) {
   const [counts, setCounts] = useState<DifficultyCounts>();
   const [error, setError] = useState<string>();
+  const [proxyDiagnostic, setProxyDiagnostic] = useState<string>();
 
   useEffect(() => {
     let cancelled = false;
+    setProxyDiagnostic(undefined);
 
     getSolvedByDifficulty(userId)
       .then(async (initial) => {
@@ -45,8 +52,17 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
         if (initial.unknown > 0 && leetCodeProxyUrl) {
           try {
             const fixed = await backfillUnknownDifficulties(userId, leetCodeProxyUrl);
-            if (!cancelled && fixed > 0) {
+            if (cancelled) return;
+            if (fixed > 0) {
               setCounts(await getSolvedByDifficulty(userId));
+            } else {
+              // Fixed nothing despite unresolved solves — normally
+              // invisible, since difficulty lookups fail soft to
+              // "Unknown" on any error. Run one diagnostic call so a
+              // stuck chart finally says why instead of staying gray
+              // forever with no explanation.
+              const diagnostic = await checkDifficultyProxyHealth(leetCodeProxyUrl);
+              if (!cancelled) setProxyDiagnostic(diagnostic);
             }
           } catch {
             // best-effort — leave the chart showing what it already has
@@ -110,6 +126,12 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
             ))}
           </ul>
         </>
+      )}
+
+      {proxyDiagnostic && (
+        <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+          {proxyDiagnostic}
+        </p>
       )}
     </div>
   );

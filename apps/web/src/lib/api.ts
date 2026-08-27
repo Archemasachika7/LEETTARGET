@@ -608,6 +608,37 @@ export async function backfillUnknownDifficulties(userId: string, proxyUrl: stri
   return fixed;
 }
 
+/** Diagnostic-only. `fetchQuestionDifficulty` (and everything built on it)
+ * deliberately fails soft to "Unknown" on any error, so a persistent
+ * backfill failure is otherwise invisible — this makes one raw proxy call
+ * for a slug ("two-sum") whose real difficulty is a known constant, so a
+ * bad response (proxy rejects the "difficulty" op, wrong shape, network
+ * error) can be told apart from a proxy that's genuinely working. Called
+ * only when a backfill attempt fixed nothing despite unresolved solves. */
+export async function checkDifficultyProxyHealth(proxyUrl: string): Promise<string | undefined> {
+  const proxyApiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  try {
+    const res = await fetch(proxyUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(proxyApiKey ? { apikey: proxyApiKey, Authorization: `Bearer ${proxyApiKey}` } : {}),
+      },
+      body: JSON.stringify({ op: "difficulty", slug: "two-sum" }),
+    });
+    if (!res.ok) {
+      return `The leetcode-proxy edge function rejected a difficulty lookup (HTTP ${res.status}). It likely needs redeploying with the latest supabase/functions/leetcode-proxy/index.ts, which added the "difficulty" operation.`;
+    }
+    const json = (await res.json()) as { data?: { question?: { difficulty?: string } | null } };
+    if (json.data?.question?.difficulty !== "Easy") {
+      return "The leetcode-proxy edge function responded, but not with Two Sum's known difficulty — it's probably running outdated code. Try redeploying supabase/functions/leetcode-proxy.";
+    }
+    return undefined;
+  } catch {
+    return "Couldn't reach the leetcode-proxy edge function to check difficulty lookups.";
+  }
+}
+
 /** A solved problem with enough of its canonical `problems` row joined in
  * to render + link it — used by the solution-mapping override UI, which
  * needs the title/slug/url that plain `SolvedProblem` doesn't carry. */
