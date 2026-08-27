@@ -6,6 +6,7 @@ import { applyTheme, getInitialTheme, type Theme } from "./lib/theme.js";
 import { UserDataProvider } from "./lib/userData.js";
 import { AppShell } from "./components/shell/AppShell.js";
 import { Logo, LogoMark } from "./components/brand/Logo.js";
+import { ArrowUpRight, Check, CircleDot, GitBranch, ListChecks } from "lucide-react";
 import { GithubIcon } from "./components/brand/GithubIcon.js";
 import { DashboardPage } from "./pages/DashboardPage.js";
 import { PracticePage } from "./pages/PracticePage.js";
@@ -94,24 +95,127 @@ function SignedInApp({ supabase }: { supabase: SupabaseClient }) {
 
 function SignInScreen({ supabase }: { supabase: SupabaseClient }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-bg px-4">
-      <div className="w-full max-w-sm text-center">
-        <LogoMark className="mx-auto h-10 w-10" title="LeetTarget" />
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-text">
-          Leet<span className="text-brand">Target</span>
-        </h1>
-        <p className="mt-2 text-sm text-text-secondary">
-          Plan, solve, track and analyse your LeetCode practice — and map every solution back to your GitHub repo.
-        </p>
-        <Button
-          variant="primary"
-          size="lg"
-          className="mt-7 w-full"
-          onClick={() => supabase.auth.signInWithOAuth({ provider: "github" })}
-        >
-          <GithubIcon />
-          Sign in with GitHub
-        </Button>
+    <div className="relative min-h-screen overflow-hidden bg-bg bg-grid px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+      {/* A faint wash keeps the entry screen from reading as an empty auth wall,
+       * while the grid retains the product's measured, engineering-led character. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_76%_28%,rgb(var(--brand)_/_0.10),transparent_25rem),radial-gradient(circle_at_13%_78%,rgb(var(--info)_/_0.06),transparent_22rem)]"
+      />
+
+      <div className="relative mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-6xl flex-col">
+        <header className="flex items-center justify-between border-b border-border pb-4">
+          <Logo markClassName="h-7 w-7" />
+          <span className="hidden font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted sm:inline">
+            Practice system / v1
+          </span>
+        </header>
+
+        <main className="grid flex-1 items-center gap-12 py-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-20 lg:py-16">
+          <section className="max-w-xl animate-enter">
+            <div className="mb-7 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
+              <span className="h-px w-8 bg-brand" />
+              A quieter way to get better
+            </div>
+            <h1 className="max-w-lg text-4xl font-semibold leading-[1.04] tracking-[-0.045em] text-text sm:text-5xl lg:text-[3.65rem]">
+              Let every solved problem point somewhere.
+            </h1>
+            <p className="mt-6 max-w-lg text-base leading-7 text-text-secondary sm:text-[17px]">
+              LeetTarget turns scattered LeetCode sessions into a considered practice loop: choose a focus, see the
+              pattern in your progress, and keep a clean line back to the code you write.
+            </p>
+
+            <dl className="mt-10 grid gap-5 border-t border-border pt-6 sm:grid-cols-3">
+              <div>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">01 / Direct</dt>
+                <dd className="mt-2 text-sm font-medium text-text">Set a target worth returning to</dd>
+              </div>
+              <div>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">02 / Visible</dt>
+                <dd className="mt-2 text-sm font-medium text-text">Notice the work you are repeating</dd>
+              </div>
+              <div>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">03 / Yours</dt>
+                <dd className="mt-2 text-sm font-medium text-text">Link each solution to its repository</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section className="relative animate-enter border border-border bg-elevated/80 p-5 shadow-[0_18px_50px_rgb(0_0_0_/_0.06)] backdrop-blur-sm sm:p-7 [animation-delay:80ms]">
+            <span aria-hidden className="absolute -left-px -top-px h-3 w-3 border-l border-t border-brand" />
+            <span aria-hidden className="absolute -bottom-px -right-px h-3 w-3 border-b border-r border-brand" />
+
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand">Begin here</p>
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.025em] text-text">Build your practice trail.</h2>
+              </div>
+              <LogoMark className="h-8 w-8 shrink-0" title="LeetTarget" />
+            </div>
+
+            <p className="mt-3 max-w-md text-sm leading-6 text-text-secondary">
+              Sign in to set your pace, organise topics and connect the work you solve with the work you ship.
+            </p>
+
+            <Button
+              variant="primary"
+              size="lg"
+              className="mt-6 w-full active:scale-[0.985]"
+              onClick={() => supabase.auth.signInWithOAuth({ provider: "github" })}
+            >
+              <GithubIcon />
+              Continue with GitHub
+              <ArrowUpRight className="ml-auto h-4 w-4" aria-hidden />
+            </Button>
+
+            <div className="my-7 h-px bg-border" />
+
+            <div className="flex items-center justify-between">
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">A glimpse of the rhythm</p>
+              <span className="text-[11px] text-text-muted">Example view</span>
+            </div>
+
+            <div className="mt-4 border border-border bg-bg">
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-text">
+                  <CircleDot className="h-4 w-4 text-brand" aria-hidden />
+                  Today&apos;s focus
+                </div>
+                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">Session 018</span>
+              </div>
+              <div className="space-y-4 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-success/40 bg-success/10 text-success">
+                    <Check className="h-3.5 w-3.5" strokeWidth={2.4} aria-hidden />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="truncate font-medium text-text">Arrays &amp; hashing</span>
+                      <span className="shrink-0 font-mono text-[11px] text-text-muted">2 / 3</span>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden bg-surface">
+                      <div className="h-full w-2/3 bg-brand" />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 border-t border-border pt-4 text-sm">
+                  <ListChecks className="h-4 w-4 shrink-0 text-text-muted" aria-hidden />
+                  <span className="flex-1 text-text-secondary">Next: Sliding window patterns</span>
+                  <GitBranch className="h-4 w-4 shrink-0 text-text-muted" aria-hidden />
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-4 text-center text-xs leading-5 text-text-muted">
+              One place for your targets, your repetition, and your proof of work.
+            </p>
+          </section>
+        </main>
+
+        <footer className="flex flex-col gap-2 border-t border-border pt-4 font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted sm:flex-row sm:items-center sm:justify-between">
+          <span>Made for deliberate practice</span>
+          <span>LeetCode progress, made legible</span>
+        </footer>
       </div>
     </div>
   );
