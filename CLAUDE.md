@@ -30,11 +30,38 @@ npm run dev:web         # Vite dev server for the site
 npm run build:web       # production build of the site
 npm run build:ext       # esbuild bundle of the extension into apps/extension/dist
 npm run typecheck       # tsc --noEmit across all workspaces
+npm test                # node:test over packages/shared
 ```
 
-There is no test suite yet — if you add non-trivial logic (especially to
-`packages/shared`, e.g. the CSV parser or GitHub path resolution), add a
-lightweight test alongside it rather than leaving it unverified.
+Tests live next to the logic they cover in `packages/shared` (`*.test.ts`,
+run by `node --test`, no test framework dependency). Add one for any
+non-trivial pure logic you put there — the CSV parser, GitHub path
+resolution, streak/topic/achievement maths. Test files import with an
+explicit `.ts` extension because `node --test` resolves specifiers
+literally; source files keep the `.js` convention the bundlers expect.
+
+## Design system
+
+`apps/web/src/index.css` defines every colour, radius and motion token; the
+Tailwind config reads them and nothing else. Use the semantic names —
+`brand` (action/progress/focus), `success` (completed), `warning`
+(attention), `danger` (failure), `info` — rather than raw colours, and the
+`easy`/`medium`/`hard` ordinal ramp for difficulty. Build from the
+primitives in `apps/web/src/ui/` instead of restyling per page.
+
+## Don't invent data
+
+The app deliberately shows fewer numbers than a typical dashboard because
+several common ones have no source:
+
+- **Accuracy / success rate / attempt counts** — LeetCode's public API
+  returns only *accepted* submissions. Nothing records failures.
+- **Solve time** — never captured anywhere.
+
+`problems.tags` is populated on demand from LeetCode's `topicTags`; topic
+mastery and the roadmap depend on that enrichment having run, and say so
+when it hasn't. If you add a feature that needs data the schema doesn't
+hold, add the data — don't approximate it in the UI.
 
 ## Conventions
 
