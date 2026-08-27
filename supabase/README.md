@@ -101,3 +101,9 @@ after the next scheduled time passes. To stop it:
   this repo) to iterate every `leetcode_profiles` row and write on each
   user's behalf. That's a deliberate, narrow bypass for a trusted server
   job with known user_ids, not a general pattern to extend elsewhere.
+
+## Optional GATE/CAT desk persistence
+
+The GATE and CAT study desks work locally by default and include a JSON backup/import control. When you are ready to store these private questions, answers, methods, and study-material uploads in Supabase, run [`merge_later.sql`](./merge_later.sql) in the Supabase SQL Editor. It creates owner-scoped `study_questions` and `study_question_attachments` tables, plus the private `study-materials` bucket and matching storage policies.
+
+> This SQL file is intentionally separate from the numbered migrations, so it is not applied automatically by `supabase db push`. Run it manually when you are ready to add the cloud layer, then wire the client migration/sync path as a separate deployment step.

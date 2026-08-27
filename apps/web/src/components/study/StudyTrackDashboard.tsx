@@ -75,7 +75,13 @@ export function StudyTrackDashboard({ mode }: { mode: Exclude<StudyTrack, "leetc
           </Link>
         </section>
 
-        <aside className="border border-border bg-surface p-5">
+        <aside className="relative isolate overflow-hidden border border-border bg-surface p-5">
+          <img
+            src="/study-desk-archive.jpg"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 -z-10 h-full w-full object-cover opacity-[0.13] grayscale mix-blend-multiply dark:opacity-[0.08] dark:mix-blend-screen"
+          />
           <div className="flex h-7 w-7 items-center justify-center border border-border bg-elevated text-brand">
             <TimerReset className="h-4 w-4" aria-hidden />
           </div>

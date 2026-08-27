@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { StudyAttachmentMeta } from "./studyDeskAttachments.js";
 
 export type StudyTrack = "leetcode" | "gate" | "cat";
 export type StuckItemStatus = "stuck" | "revisit" | "cleared";
@@ -20,6 +21,12 @@ export interface StuckItem {
   title: string;
   subject: string;
   note?: string;
+  /** An optional final answer or key result, kept separate from the reflection. */
+  answer?: string;
+  /** An optional method, approach, or re-entry cue for the next attempt. */
+  method?: string;
+  /** Local attachment metadata. File bodies live in IndexedDB, not localStorage. */
+  attachments?: StudyAttachmentMeta[];
   status: StuckItemStatus;
   createdAt: string;
 }
@@ -67,7 +74,10 @@ interface StudyDeskContextValue {
   track: StudyTrackInfo;
   stuckItems: StuckItem[];
   setMode: (mode: StudyTrack) => void;
-  addStuckItem: (item: Omit<StuckItem, "id" | "createdAt" | "status">) => void;
+  addStuckItem: (item: Omit<StuckItem, "id" | "createdAt" | "status">) => string;
+  /** Adds only backup entries whose IDs are not already on this device. */
+  mergeStuckItems: (items: StuckItem[]) => { added: number; skipped: number; addedIds: string[] };
+  setStuckItemAttachments: (id: string, attachments: StudyAttachmentMeta[]) => void;
   setStuckItemStatus: (id: string, status: StuckItemStatus) => void;
   removeStuckItem: (id: string) => void;
 }
@@ -93,6 +103,7 @@ function createId() {
 export function StudyDeskProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const [mode, setModeState] = useState<StudyTrack>("leetcode");
   const [stuckItems, setStuckItems] = useState<StuckItem[]>([]);
+  const stuckItemsRef = useRef<StuckItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -101,7 +112,10 @@ export function StudyDeskProvider({ userId, children }: { userId: string; childr
       if (saved) {
         const parsed = JSON.parse(saved) as SavedDesk;
         if (parsed.mode && parsed.mode in STUDY_TRACKS) setModeState(parsed.mode);
-        if (Array.isArray(parsed.items)) setStuckItems(parsed.items);
+        if (Array.isArray(parsed.items)) {
+          stuckItemsRef.current = parsed.items;
+          setStuckItems(parsed.items);
+        }
       }
     } catch {
       // A bad local value should never prevent the study workspace from loading.
@@ -118,18 +132,49 @@ export function StudyDeskProvider({ userId, children }: { userId: string; childr
   const setMode = useCallback((nextMode: StudyTrack) => setModeState(nextMode), []);
 
   const addStuckItem = useCallback((item: Omit<StuckItem, "id" | "createdAt" | "status">) => {
-    setStuckItems((current) => [
-      { ...item, id: createId(), createdAt: new Date().toISOString(), status: "stuck" },
-      ...current,
-    ]);
+    const id = createId();
+    setStuckItems((current) => {
+      const next: StuckItem[] = [{ ...item, id, createdAt: new Date().toISOString(), status: "stuck" }, ...current];
+      stuckItemsRef.current = next;
+      return next;
+    });
+    return id;
+  }, []);
+
+  const mergeStuckItems = useCallback((imported: StuckItem[]) => {
+    const current = stuckItemsRef.current;
+    const existingIds = new Set(current.map((item) => item.id));
+    const additions = imported.filter((item) => !existingIds.has(item.id));
+    if (additions.length > 0) {
+      const next = [...additions, ...current];
+      stuckItemsRef.current = next;
+      setStuckItems(next);
+    }
+    return { added: additions.length, skipped: imported.length - additions.length, addedIds: additions.map((item) => item.id) };
+  }, []);
+
+  const setStuckItemAttachments = useCallback((id: string, attachments: StudyAttachmentMeta[]) => {
+    setStuckItems((current) => {
+      const next = current.map((item) => (item.id === id ? { ...item, attachments } : item));
+      stuckItemsRef.current = next;
+      return next;
+    });
   }, []);
 
   const setStuckItemStatus = useCallback((id: string, status: StuckItemStatus) => {
-    setStuckItems((current) => current.map((item) => (item.id === id ? { ...item, status } : item)));
+    setStuckItems((current) => {
+      const next = current.map((item) => (item.id === id ? { ...item, status } : item));
+      stuckItemsRef.current = next;
+      return next;
+    });
   }, []);
 
   const removeStuckItem = useCallback((id: string) => {
-    setStuckItems((current) => current.filter((item) => item.id !== id));
+    setStuckItems((current) => {
+      const next = current.filter((item) => item.id !== id);
+      stuckItemsRef.current = next;
+      return next;
+    });
   }, []);
 
   const value = useMemo(
@@ -139,10 +184,12 @@ export function StudyDeskProvider({ userId, children }: { userId: string; childr
       stuckItems,
       setMode,
       addStuckItem,
+      mergeStuckItems,
+      setStuckItemAttachments,
       setStuckItemStatus,
       removeStuckItem,
     }),
-    [mode, stuckItems, setMode, addStuckItem, setStuckItemStatus, removeStuckItem]
+    [mode, stuckItems, setMode, addStuckItem, mergeStuckItems, setStuckItemAttachments, setStuckItemStatus, removeStuckItem]
   );
 
   return <StudyDeskContext.Provider value={value}>{children}</StudyDeskContext.Provider>;
