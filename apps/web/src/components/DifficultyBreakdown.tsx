@@ -1,5 +1,6 @@
-import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState } from "react";
+import { BarChart3 } from "lucide-react";
+import { getErrorMessage } from "../lib/errors.js";
 import {
   backfillUnknownDifficulties,
   checkDifficultyProxyHealth,
@@ -7,29 +8,27 @@ import {
   type DifficultyCounts,
 } from "../lib/api.js";
 import { leetCodeProxyUrl } from "../lib/leetcodeConfig.js";
+import { Card, ErrorNote, SectionHeader, Skeleton } from "../ui/index.js";
 
 interface Props {
   userId: string;
   /** Bumped by the parent (e.g. after an import or a new solve) to force a
-   * refetch — this component owns its own data since it's a join query,
-   * not part of the plain targets/solved lists the dashboard already has. */
+   * refetch — this component owns its own data since it's a join query, not
+   * part of the plain targets/solved lists the app already has. */
   refreshKey: number;
 }
 
-/** Easy/Medium/Hard is an ordinal tier (like a size tier), not an identity —
- * swapping the order changes its meaning — so it gets a single-hue ramp,
- * light-to-dark, rather than a red/yellow/green rainbow. Steps chosen from
- * the shared sequential-blue ramp (250/400/550) clear the ordinal light-end
- * and dark-end contrast floors simultaneously, so these same hex values are
- * used unchanged in both themes — no `dark:` variant needed here. "Unknown"
- * (solves whose problem row hasn't had a difficulty resolved yet, e.g. from
- * a LeetCode import) is a neutral gray, not a fourth tier. */
-const TIER_COLORS = {
-  easy: "#86b6ef",
-  medium: "#3987e5",
-  hard: "#1c5cab",
-  unknown: "#e1e0d9",
-} as const;
+/** Easy/Medium/Hard is an ordinal tier, not an identity — reordering it would
+ * change its meaning — so it uses the single-hue ramp from the design tokens
+ * (light → dark as difficulty rises) rather than a red/amber/green rainbow,
+ * which would wrongly read as bad/ok/good. "Unresolved" is a neutral, not a
+ * fourth tier. */
+const SEGMENTS = [
+  { key: "easy", label: "Easy", swatch: "bg-easy" },
+  { key: "medium", label: "Medium", swatch: "bg-medium" },
+  { key: "hard", label: "Hard", swatch: "bg-hard" },
+  { key: "unknown", label: "Unresolved", swatch: "bg-unknown" },
+] as const;
 
 export function DifficultyBreakdown({ userId, refreshKey }: Props) {
   const [counts, setCounts] = useState<DifficultyCounts>();
@@ -45,10 +44,8 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
         if (cancelled) return;
         setCounts(initial);
 
-        // Self-heal: some solved problems may be stuck at "Unknown" from
-        // before difficulty enrichment existed on this import path. Fix
-        // them quietly in the background and refresh once done, rather
-        // than leaving the gray "Unresolved" bucket permanently inflated.
+        // Self-heal: solves imported before difficulty enrichment existed sit
+        // at "Unknown" forever otherwise. Fix them quietly and refresh.
         if (initial.unknown > 0 && leetCodeProxyUrl) {
           try {
             const fixed = await backfillUnknownDifficulties(userId, leetCodeProxyUrl);
@@ -56,11 +53,9 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
             if (fixed > 0) {
               setCounts(await getSolvedByDifficulty(userId));
             } else {
-              // Fixed nothing despite unresolved solves — normally
-              // invisible, since difficulty lookups fail soft to
-              // "Unknown" on any error. Run one diagnostic call so a
-              // stuck chart finally says why instead of staying gray
-              // forever with no explanation.
+              // Fixed nothing despite unresolved solves. Difficulty lookups
+              // fail soft to "Unknown" on any error, so without this the
+              // chart would just stay grey with no explanation.
               const diagnostic = await checkDifficultyProxyHealth(leetCodeProxyUrl);
               if (!cancelled) setProxyDiagnostic(diagnostic);
             }
@@ -76,52 +71,57 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
     };
   }, [userId, refreshKey]);
 
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
-  if (!counts) return null;
+  if (error) return <ErrorNote>{error}</ErrorNote>;
+
+  if (!counts) {
+    return (
+      <Card className="p-4">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="mt-4 h-6 w-full" />
+        <Skeleton className="mt-3 h-4 w-64" />
+      </Card>
+    );
+  }
 
   const total = counts.easy + counts.medium + counts.hard + counts.unknown;
-
-  const segments: { key: keyof typeof TIER_COLORS; label: string; count: number }[] = [
-    { key: "easy", label: "Easy", count: counts.easy },
-    { key: "medium", label: "Medium", count: counts.medium },
-    { key: "hard", label: "Hard", count: counts.hard },
-    ...(counts.unknown > 0 ? [{ key: "unknown" as const, label: "Unresolved", count: counts.unknown }] : []),
-  ];
+  const rows = SEGMENTS.map((s) => ({ ...s, count: counts[s.key] })).filter(
+    (s) => s.key !== "unknown" || s.count > 0
+  );
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-800">
-      <h3 className="font-semibold text-slate-900 dark:text-slate-100">Solved by difficulty</h3>
+    <Card className="p-4">
+      <SectionHeader
+        title="Solved by difficulty"
+        icon={<BarChart3 className="h-4 w-4 text-text-muted" aria-hidden />}
+      />
 
       {total === 0 ? (
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          No solves yet — this fills in once a solve syncs from the extension or an import.
+        <p className="mt-3 text-sm text-text-muted">
+          Nothing yet — this fills in once a solve syncs from the extension, a LeetCode import, or a repo scan.
         </p>
       ) : (
         <>
-          <div className="mt-3 flex h-6 gap-[2px] overflow-hidden rounded-md bg-slate-100 dark:bg-slate-900">
-            {segments
+          <div className="mt-4 flex h-6 gap-0.5 overflow-hidden rounded" role="img" aria-label={
+            rows.map((r) => `${r.label}: ${r.count}`).join(", ")
+          }>
+            {rows
               .filter((s) => s.count > 0)
               .map((s) => (
                 <div
                   key={s.key}
                   title={`${s.label}: ${s.count} solved`}
-                  className="transition-[width] duration-300 ease-out"
-                  style={{
-                    width: `${(s.count / total) * 100}%`,
-                    backgroundColor: TIER_COLORS[s.key],
-                  }}
+                  className={`${s.swatch} transition-[width] duration-progress ease-smooth`}
+                  style={{ width: `${(s.count / total) * 100}%` }}
                 />
               ))}
           </div>
 
-          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
-            {segments.map((s) => (
-              <li key={s.key} className="flex items-center gap-1.5">
-                <span
-                  className="inline-block h-2 w-2 rounded-sm"
-                  style={{ backgroundColor: TIER_COLORS[s.key] }}
-                />
-                {s.label} <span className="text-slate-400 dark:text-slate-500">({s.count})</span>
+          <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
+            {rows.map((s) => (
+              <li key={s.key} className="flex items-center gap-1.5 text-[13px] text-text-secondary">
+                <span className={`inline-block h-2 w-2 shrink-0 rounded-sm ${s.swatch}`} aria-hidden />
+                {s.label}
+                <span className="font-mono tabular-nums text-text-muted">{s.count}</span>
               </li>
             ))}
           </ul>
@@ -129,10 +129,10 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
       )}
 
       {proxyDiagnostic && (
-        <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+        <p className="mt-4 rounded border border-warning/25 bg-warning/10 p-2.5 text-[12px] text-warning">
           {proxyDiagnostic}
         </p>
       )}
-    </div>
+    </Card>
   );
 }

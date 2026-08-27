@@ -1,7 +1,9 @@
-import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState, type FormEvent } from "react";
+import { RefreshCw, Download } from "lucide-react";
+import { getErrorMessage } from "../lib/errors.js";
 import { leetCodeProxyUrl } from "../lib/leetcodeConfig.js";
 import { getLeetCodeUsername, importFromLeetCode, type LeetCodeImportResult } from "../lib/api.js";
+import { Badge, Button, Card, ErrorNote, Input, SectionHeader, useToast } from "../ui/index.js";
 
 interface Props {
   userId: string;
@@ -9,18 +11,16 @@ interface Props {
 }
 
 /** Backfills solved problems from a public LeetCode profile — useful for
- * solves that predate installing the extension. Hides itself when no proxy
- * is configured, since browsers can't call LeetCode's API directly. A
- * successful import also enrolls the username for the daily 9pm IST
- * auto-import (see `supabase/functions/daily-import`), so this doubles as
- * that feature's setup UI — and once enrolled, "Sync now" re-runs it for
- * the saved username with one click, no retyping needed. */
+ * solves that predate installing the extension. A successful import also
+ * enrols the username for the daily 9pm IST auto-import, so this doubles as
+ * that feature's setup UI. */
 export function ImportLeetCode({ userId, onImported }: Props) {
   const [username, setUsername] = useState("");
   const [savedUsername, setSavedUsername] = useState<string>();
   const [result, setResult] = useState<LeetCodeImportResult>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     getLeetCodeUsername(userId)
@@ -33,15 +33,13 @@ export function ImportLeetCode({ userId, onImported }: Props) {
 
   if (!leetCodeProxyUrl) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-        <h3 className="font-semibold text-slate-900 dark:text-slate-100">Import from LeetCode</h3>
-        <p className="mt-1">
-          Not available yet — deploy{" "}
-          <code className="rounded bg-slate-100 px-1 dark:bg-slate-700">leetcode-proxy</code> and set{" "}
-          <code className="rounded bg-slate-100 px-1 dark:bg-slate-700">VITE_LEETCODE_PROXY_URL</code>. See{" "}
-          <code className="rounded bg-slate-100 px-1 dark:bg-slate-700">supabase/README.md</code>.
+      <Card className="p-4">
+        <SectionHeader title="Import from LeetCode" />
+        <p className="mt-2 text-[13px] text-text-muted">
+          Not available yet — deploy the <code className="rounded-sm bg-surface px-1 font-mono">leetcode-proxy</code>{" "}
+          edge function and set <code className="rounded-sm bg-surface px-1 font-mono">VITE_LEETCODE_PROXY_URL</code>.
         </p>
-      </div>
+      </Card>
     );
   }
 
@@ -54,6 +52,7 @@ export function ImportLeetCode({ userId, onImported }: Props) {
       setResult(outcome);
       setSavedUsername(name);
       onImported();
+      toast(`Synced ${outcome.imported} recent solve${outcome.imported === 1 ? "" : "s"}`);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -66,69 +65,62 @@ export function ImportLeetCode({ userId, onImported }: Props) {
     void runImport(username);
   }
 
-  // "Sync now" (header) and "Import" (form) trigger the exact same
-  // operation — the only reason to have both is so there's always a
-  // one-click re-sync in the header once a username exists, without
-  // making the reader retype it below. So "Sync now" uses whichever
-  // username is available: the saved one, or — if nothing's saved yet —
-  // whatever's currently typed in the field, rather than sitting
-  // permanently disabled until a separate first-time Import happens.
+  // Both buttons run the same import — "Sync now" simply skips retyping a
+  // username that's already known, so it accepts whichever is available
+  // rather than sitting disabled until a separate first-time import happens.
   const syncTarget = (savedUsername ?? username).trim();
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-800">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-slate-900 dark:text-slate-100">Import from LeetCode</h3>
-        <button
-          onClick={() => syncTarget && void runImport(syncTarget)}
-          disabled={loading || !syncTarget}
-          title={syncTarget ? undefined : "Enter a username below first"}
-          className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white transition-colors duration-200 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
-        >
-          {loading ? "Syncing..." : "Sync now"}
-        </button>
-      </div>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        Backfills recent solves from a public profile — handy before the extension has seen everything.
-      </p>
+    <Card className="p-4">
+      <SectionHeader
+        title="Import from LeetCode"
+        description="Backfills recent solves from a public profile."
+        icon={<Download className="h-4 w-4 text-text-muted" aria-hidden />}
+        action={
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => syncTarget && void runImport(syncTarget)}
+            disabled={!syncTarget}
+            loading={loading}
+            loadingText="Syncing…"
+            title={syncTarget ? undefined : "Enter a username below first"}
+          >
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+            Sync now
+          </Button>
+        }
+      />
 
-      {savedUsername ? (
-        <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-          Auto-imports daily at 9pm IST for{" "}
-          <span className="font-medium text-slate-600 dark:text-slate-300">{savedUsername}</span>. "Sync
-          now" runs it immediately.
-        </p>
-      ) : (
-        <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-          Enter your LeetCode username below, then either button runs the same import.
+      {savedUsername && (
+        <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px] text-text-muted">
+          Auto-imports daily at 9pm IST for
+          <Badge tone="brand">{savedUsername}</Badge>
         </p>
       )}
 
       <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
-        <input
+        <Input
           required
+          aria-label="LeetCode username"
           placeholder={savedUsername ? "Different username?" : "LeetCode username"}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="flex-1 rounded border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 transition-colors duration-200 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors duration-200 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300"
-        >
-          {loading ? "Importing..." : "Import"}
-        </button>
+        <Button type="submit" loading={loading} loadingText="Importing…" className="shrink-0">
+          Import
+        </Button>
       </form>
 
-      {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <ErrorNote className="mt-3">{error}</ErrorNote>}
       {result && (
-        <p className="mt-2 text-sm text-green-700 dark:text-green-400">
-          {result.summary.totalSolved} solved on LeetCode ({result.summary.easySolved}E /{" "}
-          {result.summary.mediumSolved}M / {result.summary.hardSolved}H) — synced {result.imported} recent
-          solve{result.imported === 1 ? "" : "s"}.
+        <p className="mt-3 text-[13px] text-success">
+          <span className="font-mono tabular-nums">{result.summary.totalSolved}</span> solved on LeetCode (
+          {result.summary.easySolved}E / {result.summary.mediumSolved}M / {result.summary.hardSolved}H) — synced{" "}
+          <span className="font-mono tabular-nums">{result.imported}</span> recent solve
+          {result.imported === 1 ? "" : "s"}.
         </p>
       )}
-    </div>
+    </Card>
   );
 }

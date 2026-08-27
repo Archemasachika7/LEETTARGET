@@ -39,8 +39,20 @@ query questionDifficulty($titleSlug: String!) {
   }
 }`;
 
+// Difficulty and topic tags come from the same `question` node, so fetching
+// both in one round trip halves the requests when enriching a problem for the
+// first time. "difficulty" is kept as its own op so an older client (or a
+// half-rolled-out deploy) doesn't break.
+const META_QUERY = `
+query questionMeta($titleSlug: String!) {
+  question(titleSlug: $titleSlug) {
+    difficulty
+    topicTags { name slug }
+  }
+}`;
+
 interface ProxyRequest {
-  op: "summary" | "recent" | "difficulty";
+  op: "summary" | "recent" | "difficulty" | "meta";
   username?: string;
   limit?: number;
   slug?: string;
@@ -71,14 +83,14 @@ Deno.serve(async (req: Request) => {
     }
     query = body.op === "summary" ? SUMMARY_QUERY : RECENT_QUERY;
     variables = body.op === "summary" ? { username: body.username } : { username: body.username, limit: body.limit ?? 20 };
-  } else if (body.op === "difficulty") {
+  } else if (body.op === "difficulty" || body.op === "meta") {
     if (!body.slug) {
-      return json({ error: 'Expected { op: "difficulty", slug: string }.' }, 400);
+      return json({ error: `Expected { op: "${body.op}", slug: string }.` }, 400);
     }
-    query = DIFFICULTY_QUERY;
+    query = body.op === "meta" ? META_QUERY : DIFFICULTY_QUERY;
     variables = { titleSlug: body.slug };
   } else {
-    return json({ error: 'Expected op to be "summary", "recent", or "difficulty".' }, 400);
+    return json({ error: 'Expected op to be "summary", "recent", "difficulty", or "meta".' }, 400);
   }
 
   try {
