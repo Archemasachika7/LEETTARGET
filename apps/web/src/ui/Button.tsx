@@ -15,7 +15,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-brand text-brand-contrast hover:bg-brand/90 shadow-sm shadow-brand/20",
+  primary: "bg-brand text-brand-contrast hover:bg-brand/85",
   secondary: "border border-border bg-elevated text-text hover:border-border-strong hover:bg-surface",
   ghost: "text-text-secondary hover:bg-surface hover:text-text",
   danger: "border border-danger/30 text-danger hover:bg-danger/10",
@@ -37,7 +37,7 @@ export const Button = forwardRef<HTMLButtonElement, Props>(function Button(
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded font-medium",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-sm font-medium",
         "transition-colors duration-fast",
         "disabled:pointer-events-none disabled:opacity-50",
         VARIANTS[variant],

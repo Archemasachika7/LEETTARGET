@@ -24,7 +24,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[11px] font-medium",
+        "inline-flex items-center gap-1 border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em]",
         TONES[tone],
         className
       )}
@@ -49,7 +49,7 @@ const DIFFICULTY_DOT: Record<Difficulty, string> = {
 export function DifficultyBadge({ difficulty, className }: { difficulty: Difficulty; className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-[12px] text-text-secondary", className)}>
-      <span className={cn("h-2 w-2 shrink-0 rounded-sm", DIFFICULTY_DOT[difficulty])} aria-hidden />
+      <span className={cn("h-2 w-2 shrink-0", DIFFICULTY_DOT[difficulty])} aria-hidden />
       {difficulty}
     </span>
   );

@@ -30,7 +30,7 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen bg-bg bg-grid">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-elevated focus:px-3 focus:py-2 focus:text-sm"
@@ -38,7 +38,7 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-40 border-b border-border bg-bg/85 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-border bg-bg/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-content items-center gap-6 px-4 sm:px-6">
           <NavLink to="/" className="shrink-0" aria-label="LeetTarget home">
             <Logo className="hidden sm:inline-flex" />
@@ -56,8 +56,13 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
                 end={end}
                 className={({ isActive }) =>
                   cn(
-                    "rounded px-3 py-1.5 text-sm font-medium transition-colors duration-fast",
-                    isActive ? "bg-surface text-text" : "text-text-muted hover:text-text"
+                    // Mono uppercase reads as an instrument channel label
+                    // rather than website chrome, and the active state is a
+                    // 1px underline instead of a filled pill.
+                    "border-b-2 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] transition-colors duration-fast",
+                    isActive
+                      ? "border-brand text-text"
+                      : "border-transparent text-text-muted hover:text-text"
                   )
                 }
               >
@@ -71,7 +76,7 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
               <button
                 onClick={onToggleTheme}
                 aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-                className="rounded p-2 text-text-muted transition-colors duration-fast hover:bg-surface hover:text-text"
+                className="rounded-sm p-2 text-text-muted transition-colors duration-fast hover:bg-surface hover:text-text"
               >
                 {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
               </button>
@@ -80,7 +85,7 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
               <button
                 onClick={onSignOut}
                 aria-label="Sign out"
-                className="rounded p-2 text-text-muted transition-colors duration-fast hover:bg-surface hover:text-text"
+                className="rounded-sm p-2 text-text-muted transition-colors duration-fast hover:bg-surface hover:text-text"
               >
                 <LogOut className="h-[18px] w-[18px]" />
               </button>
@@ -115,7 +120,7 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
               className={({ isActive }) =>
                 cn(
                   // 44px minimum touch target, met by the 56px row height.
-                  "flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors duration-fast",
+                  "flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 font-mono text-[9px] uppercase tracking-wider transition-colors duration-fast",
                   isActive ? "text-brand" : "text-text-muted"
                 )
               }

@@ -45,7 +45,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             className={cn(
-              "animate-toast-in pointer-events-auto flex items-center gap-2.5 rounded-lg border border-border bg-elevated py-2 pl-3 pr-2 text-[13px] text-text shadow-lg shadow-black/10"
+              "animate-toast-in pointer-events-auto flex items-center gap-2.5 border border-border bg-elevated py-2 pl-3 pr-2 text-[13px] text-text"
             )}
           >
             {t.tone === "success" && <Check className="h-4 w-4 shrink-0 text-success" aria-hidden />}
