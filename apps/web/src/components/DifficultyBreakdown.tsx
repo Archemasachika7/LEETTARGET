@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { BarChart3 } from "lucide-react";
 import { getErrorMessage } from "../lib/errors.js";
 import {
   backfillUnknownDifficulties,
@@ -8,7 +7,7 @@ import {
   type DifficultyCounts,
 } from "../lib/api.js";
 import { leetCodeProxyUrl } from "../lib/leetcodeConfig.js";
-import { Card, ErrorNote, SectionHeader, Skeleton } from "../ui/index.js";
+import { Chassis, ErrorNote, MonoLabel, Panel, Skeleton, TelemetryBar } from "../ui/index.js";
 
 interface Props {
   userId: string;
@@ -18,16 +17,15 @@ interface Props {
   refreshKey: number;
 }
 
-/** Easy/Medium/Hard is an ordinal tier, not an identity — reordering it would
- * change its meaning — so it uses the single-hue ramp from the design tokens
- * (light → dark as difficulty rises) rather than a red/amber/green rainbow,
- * which would wrongly read as bad/ok/good. "Unresolved" is a neutral, not a
- * fourth tier. */
-const SEGMENTS = [
-  { key: "easy", label: "Easy", swatch: "bg-easy" },
-  { key: "medium", label: "Medium", swatch: "bg-medium" },
-  { key: "hard", label: "Hard", swatch: "bg-hard" },
-  { key: "unknown", label: "Unresolved", swatch: "bg-unknown" },
+/** Difficulty uses LeetCode's own green/amber/rose convention rather than an
+ * abstract single-hue ramp. Readers arrive already fluent in it, and matching
+ * the source domain beats internal tidiness. "Unresolved" stays neutral grey —
+ * it isn't a fourth tier, it's missing data. */
+const TIERS = [
+  { key: "easy", label: "Easy", swatch: "bg-easy", text: "text-easy" },
+  { key: "medium", label: "Medium", swatch: "bg-medium", text: "text-medium" },
+  { key: "hard", label: "Hard", swatch: "bg-hard", text: "text-hard" },
+  { key: "unknown", label: "Unresolved", swatch: "bg-unknown", text: "text-text-muted" },
 ] as const;
 
 export function DifficultyBreakdown({ userId, refreshKey }: Props) {
@@ -45,7 +43,7 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
         setCounts(initial);
 
         // Self-heal: solves imported before difficulty enrichment existed sit
-        // at "Unknown" forever otherwise. Fix them quietly and refresh.
+        // at "Unknown" forever otherwise.
         if (initial.unknown > 0 && leetCodeProxyUrl) {
           try {
             const fixed = await backfillUnknownDifficulties(userId, leetCodeProxyUrl);
@@ -53,9 +51,8 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
             if (fixed > 0) {
               setCounts(await getSolvedByDifficulty(userId));
             } else {
-              // Fixed nothing despite unresolved solves. Difficulty lookups
-              // fail soft to "Unknown" on any error, so without this the
-              // chart would just stay grey with no explanation.
+              // Difficulty lookups fail soft to "Unknown" on any error, so
+              // without this the chart would just stay grey unexplained.
               const diagnostic = await checkDifficultyProxyHealth(leetCodeProxyUrl);
               if (!cancelled) setProxyDiagnostic(diagnostic);
             }
@@ -75,64 +72,84 @@ export function DifficultyBreakdown({ userId, refreshKey }: Props) {
 
   if (!counts) {
     return (
-      <Card className="p-4">
-        <Skeleton className="h-4 w-40" />
-        <Skeleton className="mt-4 h-6 w-full" />
-        <Skeleton className="mt-3 h-4 w-64" />
-      </Card>
+      <Chassis>
+        <Panel>
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="mt-5 h-5 w-full" />
+          <Skeleton className="mt-4 h-3 w-48" />
+        </Panel>
+      </Chassis>
     );
   }
 
   const total = counts.easy + counts.medium + counts.hard + counts.unknown;
-  const rows = SEGMENTS.map((s) => ({ ...s, count: counts[s.key] })).filter(
-    (s) => s.key !== "unknown" || s.count > 0
+  const rows = TIERS.map((t) => ({ ...t, count: counts[t.key] })).filter(
+    (t) => t.key !== "unknown" || t.count > 0
   );
 
   return (
-    <Card className="p-4">
-      <SectionHeader
-        title="Solved by difficulty"
-        icon={<BarChart3 className="h-4 w-4 text-text-muted" aria-hidden />}
+    <Chassis className="flex h-full flex-col">
+      <TelemetryBar
+        left={<span className="text-text-secondary">Difficulty mix</span>}
+        right={<span className="tnum">{total} total</span>}
       />
 
       {total === 0 ? (
-        <p className="mt-3 text-sm text-text-muted">
-          Nothing yet — this fills in once a solve syncs from the extension, a LeetCode import, or a repo scan.
-        </p>
+        <Panel className="flex-1">
+          <p className="text-[13px] text-text-muted">
+            Nothing yet — this fills in once a solve syncs from the extension, a LeetCode import, or a repo scan.
+          </p>
+        </Panel>
       ) : (
         <>
-          <div className="mt-4 flex h-6 gap-0.5 overflow-hidden rounded" role="img" aria-label={
-            rows.map((r) => `${r.label}: ${r.count}`).join(", ")
-          }>
-            {rows
-              .filter((s) => s.count > 0)
-              .map((s) => (
-                <div
-                  key={s.key}
-                  title={`${s.label}: ${s.count} solved`}
-                  className={`${s.swatch} transition-[width] duration-progress ease-smooth`}
-                  style={{ width: `${(s.count / total) * 100}%` }}
-                />
-              ))}
-          </div>
+          <Panel mark className="flex-1">
+            {/* Proportional bar: butt-jointed segments, no rounding, so the
+             * boundaries read as measured divisions rather than pills. */}
+            <div
+              className="flex h-3 w-full gap-px"
+              role="img"
+              aria-label={rows.map((r) => `${r.label}: ${r.count}`).join(", ")}
+            >
+              {rows
+                .filter((r) => r.count > 0)
+                .map((r) => (
+                  <div
+                    key={r.key}
+                    title={`${r.label}: ${r.count} solved`}
+                    className={`${r.swatch} transition-[width] duration-progress ease-smooth`}
+                    style={{ width: `${(r.count / total) * 100}%` }}
+                  />
+                ))}
+            </div>
 
-          <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
-            {rows.map((s) => (
-              <li key={s.key} className="flex items-center gap-1.5 text-[13px] text-text-secondary">
-                <span className={`inline-block h-2 w-2 shrink-0 rounded-sm ${s.swatch}`} aria-hidden />
-                {s.label}
-                <span className="font-mono tabular-nums text-text-muted">{s.count}</span>
-              </li>
-            ))}
-          </ul>
+            {/* One row per tier rather than a two-column grid: in a half-width
+             * panel, columns push each count far from its own label and the
+             * pairing stops being obvious at a glance. */}
+            <ul className="mt-5 divide-y divide-border/60">
+              {rows.map((r, i) => (
+                <li key={r.key} className="flex items-baseline justify-between gap-3 py-2 first:pt-0 last:pb-0">
+                  <span className="flex items-center gap-2">
+                    <span className={`h-2 w-2 shrink-0 ${r.swatch}`} aria-hidden />
+                    <MonoLabel index={i + 1}>{r.label}</MonoLabel>
+                  </span>
+                  <span className="flex items-baseline gap-2">
+                    <span className={`font-mono text-sm font-semibold tabular-nums ${r.text}`}>{r.count}</span>
+                    <span className="w-10 text-right font-mono text-[10px] tabular-nums text-text-muted">
+                      {Math.round((r.count / total) * 100)}%
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Panel>
         </>
       )}
 
       {proxyDiagnostic && (
-        <p className="mt-4 rounded border border-warning/25 bg-warning/10 p-2.5 text-[12px] text-warning">
+        <div className="border-t border-warning/30 bg-warning/10 px-4 py-2.5 text-[12px] text-warning">
           {proxyDiagnostic}
-        </p>
+        </div>
       )}
-    </Card>
+    </Chassis>
   );
 }

@@ -2,7 +2,7 @@ import { forwardRef, type InputHTMLAttributes, type SelectHTMLAttributes, type T
 import { cn } from "../lib/cn.js";
 
 const FIELD =
-  "w-full rounded border border-border bg-elevated px-2.5 py-2 text-sm text-text " +
+  "w-full rounded-sm border border-border bg-elevated px-2.5 py-2 text-sm text-text " +
   "placeholder:text-text-muted transition-colors duration-fast " +
   "hover:border-border-strong focus:border-brand disabled:opacity-50";
 
@@ -71,7 +71,7 @@ export function ChoiceGroup<T extends string | number>({
   className?: string;
 }) {
   return (
-    <div className={cn("inline-flex flex-wrap gap-1 rounded-lg border border-border bg-surface p-1", className)} role="group" aria-label={label}>
+    <div className={cn("inline-flex flex-wrap gap-1 border border-border bg-surface p-1", className)} role="group" aria-label={label}>
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
@@ -81,8 +81,8 @@ export function ChoiceGroup<T extends string | number>({
             aria-pressed={selected}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "rounded px-2.5 py-1 text-[13px] font-medium transition-colors duration-fast",
-              selected ? "bg-elevated text-text shadow-sm" : "text-text-muted hover:text-text"
+              "rounded-sm px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors duration-fast",
+              selected ? "bg-brand text-brand-contrast" : "text-text-muted hover:text-text"
             )}
           >
             {opt.label}

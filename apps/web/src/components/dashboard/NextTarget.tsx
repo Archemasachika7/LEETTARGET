@@ -1,15 +1,18 @@
-import { ArrowUpRight, Check, Sparkles } from "lucide-react";
+import { ArrowUpRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Recommendation } from "../../lib/recommend.js";
-import { Button, Card, Eyebrow } from "../../ui/index.js";
+import { Button, Card, Chassis, MonoLabel, Panel, TelemetryBar } from "../../ui/index.js";
 
 /** The most actionable block on the dashboard: what to solve now, and why.
- * The "why" is always a fact drawn from the reader's own list — see
- * lib/recommend.ts for why it never claims more than that. */
+ *
+ * The reason line stays in sentence case rather than the mono uppercase used
+ * for labels — it's a sentence to be read, not a channel to be scanned, and
+ * setting prose in tracked-out caps costs legibility for nothing. See
+ * lib/recommend.ts for why the reason never claims more than the data shows. */
 export function NextTarget({ recommendations }: { recommendations: Recommendation[] }) {
   if (recommendations.length === 0) {
     return (
-      <Card className="border-success/25 bg-success/[0.04] p-5">
+      <Card className="border-success/30 bg-success/[0.04] p-5">
         <div className="flex items-start gap-3">
           <Check className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden />
           <div>
@@ -17,7 +20,7 @@ export function NextTarget({ recommendations }: { recommendations: Recommendatio
             <p className="mt-1 text-[13px] text-text-muted">
               Add more problems to keep going — or upload a new list to work through.
             </p>
-            <Link to="/practice" className="mt-3 inline-block">
+            <Link to="/practice" className="mt-4 inline-block">
               <Button variant="primary" size="sm">
                 Add targets
               </Button>
@@ -32,15 +35,17 @@ export function NextTarget({ recommendations }: { recommendations: Recommendatio
   const primaryTitle = primary.target.customTitle ?? primary.target.customUrl ?? "Untitled";
 
   return (
-    <Card className="overflow-hidden">
-      <div className="border-b border-border bg-brand/[0.04] p-5">
-        <Eyebrow className="text-brand">Next target</Eyebrow>
-        <h2 className="mt-2 text-lg font-semibold tracking-tight text-text">{primaryTitle}</h2>
-        <p className="mt-1 flex items-start gap-1.5 text-[13px] text-text-muted">
-          <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-          {primary.reason}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
+    <Chassis>
+      <TelemetryBar
+        left={<span className="text-brand">Next target</span>}
+        right={<span className="tnum">{recommendations.length} queued</span>}
+      />
+
+      <Panel mark className="p-6">
+        <h2 className="text-xl font-semibold tracking-tight text-text">{primaryTitle}</h2>
+        <p className="mt-2 text-[13px] text-text-secondary">{primary.reason}</p>
+
+        <div className="mt-5 flex flex-wrap gap-2">
           {primary.target.customUrl && (
             <a href={primary.target.customUrl} target="_blank" rel="noreferrer">
               <Button variant="primary">
@@ -53,11 +58,11 @@ export function NextTarget({ recommendations }: { recommendations: Recommendatio
             <Button variant="secondary">See all targets</Button>
           </Link>
         </div>
-      </div>
+      </Panel>
 
       {rest.length > 0 && (
-        <ul className="divide-y divide-border">
-          {rest.map(({ target, reason }) => {
+        <ul className="divide-y divide-border border-t border-border">
+          {rest.map(({ target, reason }, i) => {
             const title = target.customTitle ?? target.customUrl ?? "Untitled";
             return (
               <li key={target.id}>
@@ -65,8 +70,9 @@ export function NextTarget({ recommendations }: { recommendations: Recommendatio
                   href={target.customUrl ?? "#"}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-3 px-5 py-3 transition-colors duration-fast hover:bg-surface"
+                  className="flex items-center gap-4 px-5 py-3 transition-colors duration-fast hover:bg-elevated"
                 >
+                  <MonoLabel className="w-6 shrink-0">{String(i + 2).padStart(2, "0")}</MonoLabel>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-text">{title}</span>
                     <span className="block truncate text-[12px] text-text-muted">{reason}</span>
@@ -78,6 +84,6 @@ export function NextTarget({ recommendations }: { recommendations: Recommendatio
           })}
         </ul>
       )}
-    </Card>
+    </Chassis>
   );
 }

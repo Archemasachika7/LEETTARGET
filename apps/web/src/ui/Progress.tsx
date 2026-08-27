@@ -64,15 +64,61 @@ export function ProgressBar({
       aria-valuemin={0}
       aria-valuemax={max}
       aria-label={label}
-      className={cn("h-1.5 w-full overflow-hidden rounded-full bg-surface", className)}
+      className={cn("h-1 w-full overflow-hidden bg-border/60", className)}
     >
       <div
         className={cn(
-          "h-full rounded-full transition-[width] duration-progress ease-smooth",
+          "h-full transition-[width] duration-progress ease-smooth",
           tone === "success" ? "bg-success" : "bg-brand"
         )}
         style={{ width: `${pct}%` }}
       />
+    </div>
+  );
+}
+
+/** A progress meter drawn as discrete ticks rather than a continuous fill —
+ * the segmented LED bar on a piece of equipment. Reads as a *count* out of a
+ * fixed scale, which is what these values are, and gives the eye something to
+ * measure against that a smooth bar doesn't. */
+export function SegmentBar({
+  value,
+  max,
+  segments = 28,
+  className,
+  tone = "brand",
+  label,
+}: {
+  value: number;
+  max: number;
+  segments?: number;
+  className?: string;
+  tone?: "brand" | "success" | "warning";
+  label?: string;
+}) {
+  const ratio = max > 0 ? Math.min(1, value / max) : 0;
+  const lit = Math.round(ratio * segments);
+  const litTone =
+    tone === "success" ? "bg-success" : tone === "warning" ? "bg-warning" : "bg-brand";
+
+  return (
+    <div
+      role="progressbar"
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={max}
+      aria-label={label}
+      className={cn("flex h-2 w-full gap-px", className)}
+    >
+      {Array.from({ length: segments }).map((_, i) => (
+        <span
+          key={i}
+          className={cn(
+            "h-full flex-1 transition-colors duration-progress",
+            i < lit ? litTone : "bg-border/70"
+          )}
+        />
+      ))}
     </div>
   );
 }

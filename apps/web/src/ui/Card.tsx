@@ -19,9 +19,9 @@ export function Card({
   return (
     <Tag
       className={cn(
-        "rounded-lg border border-border bg-elevated",
-        "transition-[border-color,transform,background-color] duration-fast",
-        interactive && "hover:-translate-y-px hover:border-border-strong",
+        "border border-border bg-elevated",
+        "transition-[border-color,background-color] duration-fast",
+        interactive && "hover:border-border-strong hover:bg-surface",
         className
       )}
       {...rest}
