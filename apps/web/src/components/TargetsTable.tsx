@@ -1,68 +1,83 @@
 import type { Target } from "@leettarget/shared";
+import { Check, ExternalLink, X } from "lucide-react";
+import { Badge, Card } from "../ui/index.js";
 
 interface Props {
   targets: Target[];
   onRemove?: (id: string) => void;
 }
 
+/** Target rows. On mobile these stack rather than shrinking a four-column
+ * table into unreadable slivers — the title and status are what matter on a
+ * phone, and the source label moves under the title. */
 export function TargetsTable({ targets, onRemove }: Props) {
   if (targets.length === 0) {
-    return <p className="text-sm text-slate-500 dark:text-slate-400">No targets yet — add one or upload a CSV.</p>;
+    return <p className="text-sm text-text-muted">No targets yet.</p>;
   }
 
   return (
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
-          <th className="py-1.5 pr-2 font-medium">Question</th>
-          <th className="py-1.5 pr-2 font-medium">Source</th>
-          <th className="py-1.5 pr-2 font-medium">Status</th>
-          {onRemove && <th className="py-1.5 font-medium" />}
-        </tr>
-      </thead>
-      <tbody>
-        {targets.map((target) => (
-          <tr key={target.id} className="border-b border-slate-100 dark:border-slate-800">
-            <td className="py-1.5 pr-2 text-slate-900 dark:text-slate-100">
-              {target.customUrl ? (
-                <a
-                  href={target.customUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {target.customTitle ?? target.customUrl}
-                </a>
-              ) : (
-                target.customTitle ?? target.problemId
-              )}
-            </td>
-            <td className="py-1.5 pr-2 text-slate-500 dark:text-slate-400">{target.source}</td>
-            <td className="py-1.5 pr-2">
+    <Card className="divide-y divide-border overflow-hidden">
+      <ul>
+        {targets.map((target) => {
+          const done = target.status === "done";
+          const title = target.customTitle ?? target.customUrl ?? target.problemId ?? "Untitled";
+          return (
+            <li
+              key={target.id}
+              className="flex items-center gap-3 border-b border-border px-3 py-2.5 last:border-0 transition-colors duration-fast hover:bg-surface"
+            >
               <span
                 className={
-                  target.status === "done"
-                    ? "rounded bg-green-100 px-1.5 py-0.5 text-green-700 dark:bg-green-500/10 dark:text-green-400"
-                    : "rounded bg-slate-100 px-1.5 py-0.5 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                  done
+                    ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/15 text-success"
+                    : "h-5 w-5 shrink-0 rounded-full border border-border-strong"
                 }
+                aria-hidden
               >
-                {target.status}
+                {done && <Check className="h-3 w-3" strokeWidth={3} />}
               </span>
-            </td>
-            {onRemove && (
-              <td className="py-1.5 text-right">
+
+              <div className="min-w-0 flex-1">
+                {target.customUrl ? (
+                  <a
+                    href={target.customUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group inline-flex items-center gap-1.5 text-sm text-text transition-colors duration-fast hover:text-brand"
+                  >
+                    <span className="truncate">{title}</span>
+                    <ExternalLink
+                      className="h-3 w-3 shrink-0 text-text-muted opacity-0 transition-opacity duration-fast group-hover:opacity-100"
+                      aria-hidden
+                    />
+                  </a>
+                ) : (
+                  <span className="block truncate text-sm text-text">{title}</span>
+                )}
+                <span className="mt-0.5 block text-[11px] uppercase tracking-wide text-text-muted sm:hidden">
+                  {target.source}
+                </span>
+              </div>
+
+              <span className="hidden text-[11px] uppercase tracking-wide text-text-muted sm:block">
+                {target.source}
+              </span>
+
+              <Badge tone={done ? "success" : "neutral"}>{done ? "Done" : "Pending"}</Badge>
+
+              {onRemove && (
                 <button
                   onClick={() => onRemove(target.id)}
-                  className="text-xs text-slate-400 transition-colors duration-200 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400"
-                  aria-label={`Remove ${target.customTitle ?? "target"}`}
+                  aria-label={`Remove ${title}`}
+                  className="rounded p-1.5 text-text-muted transition-colors duration-fast hover:bg-danger/10 hover:text-danger"
                 >
-                  Remove
+                  <X className="h-3.5 w-3.5" aria-hidden />
                 </button>
-              </td>
-            )}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
   );
 }

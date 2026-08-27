@@ -1,22 +1,17 @@
-import { getErrorMessage } from "./lib/errors.js";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
-import type { SolvedProblem, Target } from "@leettarget/shared";
 import { isSupabaseConfigured, supabase } from "./lib/supabaseClient.js";
-import { deleteTarget, listSolvedProblems, listTargets } from "./lib/api.js";
 import { applyTheme, getInitialTheme, type Theme } from "./lib/theme.js";
-import { downloadTargetsAsCsv } from "./lib/downloadCsv.js";
-import { CsvUploader } from "./components/CsvUploader.js";
-import { ImportLeetCode } from "./components/ImportLeetCode.js";
-import { AddTargetForm } from "./components/AddTargetForm.js";
-import { RepoMappingForm } from "./components/RepoMappingForm.js";
-import { TargetsTable } from "./components/TargetsTable.js";
-import { ProgressSummary } from "./components/ProgressSummary.js";
-import { DifficultyBreakdown } from "./components/DifficultyBreakdown.js";
-import { SolutionMappingTable } from "./components/SolutionMappingTable.js";
-import { ExtensionSetup } from "./components/ExtensionSetup.js";
-import { ProfileForm } from "./components/ProfileForm.js";
-import { Leaderboard } from "./components/Leaderboard.js";
+import { UserDataProvider } from "./lib/userData.js";
+import { AppShell } from "./components/shell/AppShell.js";
+import { Logo, LogoMark } from "./components/brand/Logo.js";
+import { GithubIcon } from "./components/brand/GithubIcon.js";
+import { DashboardPage } from "./pages/DashboardPage.js";
+import { PracticePage } from "./pages/PracticePage.js";
+import { ProgressPage } from "./pages/ProgressPage.js";
+import { ProfilePage } from "./pages/ProfilePage.js";
+import { Button, Card, ToastProvider } from "./ui/index.js";
 
 export default function App() {
   if (!isSupabaseConfigured || !supabase) {
@@ -27,14 +22,26 @@ export default function App() {
 
 function SetupNotice() {
   return (
-    <div className="mx-auto max-w-lg p-8 text-center">
-      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">LeetTarget</h1>
-      <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
-        Supabase isn't configured yet. Copy{" "}
-        <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">apps/web/.env.example</code> to{" "}
-        <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">.env.local</code> and fill in your
+    <CenteredPanel>
+      <p className="text-sm text-text-secondary">
+        Supabase isn't configured yet. Copy <Code>apps/web/.env.example</Code> to <Code>.env.local</Code>, fill in your
         project's URL and anon key, then restart the dev server.
       </p>
+    </CenteredPanel>
+  );
+}
+
+function Code({ children }: { children: React.ReactNode }) {
+  return <code className="rounded-sm bg-surface px-1 py-0.5 font-mono text-[12px] text-text">{children}</code>;
+}
+
+function CenteredPanel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-bg px-4">
+      <Card className="w-full max-w-md p-8 text-center">
+        <Logo className="mb-5 justify-center" markClassName="h-7 w-7" />
+        {children}
+      </Card>
     </div>
   );
 }
@@ -42,195 +49,67 @@ function SetupNotice() {
 function SignedInApp({ supabase }: { supabase: SupabaseClient }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, [supabase]);
-
-  if (loading) return null;
-  if (!session) return <SignInScreen supabase={supabase} />;
-
-  return <Dashboard userId={session.user.id} onSignOut={() => supabase.auth.signOut()} />;
-}
-
-function SignInScreen({ supabase }: { supabase: SupabaseClient }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-white dark:bg-slate-950">
-      <div className="mx-auto max-w-lg p-8 text-center">
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">LeetTarget</h1>
-        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
-          Track your LeetCode progress and map it to your GitHub solutions repo.
-        </p>
-        <button
-          onClick={() => supabase.auth.signInWithOAuth({ provider: "github" })}
-          className="mt-6 rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 dark:bg-slate-100 dark:text-slate-900"
-        >
-          Sign in with GitHub
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/** Small sun/moon toggle — deliberately a plain icon swap, not an
- * animated switch track, to keep this in line with "restrained", not
- * "look how much motion we can add". */
-function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
-  return (
-    <button
-      onClick={onToggle}
-      aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-      title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-      className="rounded border border-slate-300 px-2 py-1.5 text-sm text-slate-600 transition-colors duration-200 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
-    >
-      {theme === "dark" ? "Light" : "Dark"}
-    </button>
-  );
-}
-
-type Tab = "dashboard" | "targets" | "solved" | "leaderboard" | "settings";
-
-function Dashboard({ userId, onSignOut }: { userId: string; onSignOut: () => void }) {
-  const [tab, setTab] = useState<Tab>("dashboard");
-  const [targets, setTargets] = useState<Target[]>([]);
-  const [solved, setSolved] = useState<SolvedProblem[]>([]);
-  const [error, setError] = useState<string>();
-  const [refreshTick, setRefreshTick] = useState(0);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
-  const refresh = useCallback(() => {
-    Promise.all([listTargets(userId), listSolvedProblems(userId)])
-      .then(([t, s]) => {
-        setTargets(t);
-        setSolved(s);
-        setRefreshTick((n) => n + 1);
-      })
-      .catch((err) => setError(getErrorMessage(err)));
-  }, [userId]);
-
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setLoading(false);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
+    return () => sub.subscription.unsubscribe();
+  }, [supabase]);
 
-  async function handleRemove(id: string) {
-    try {
-      await deleteTarget(id);
-      refresh();
-    } catch (err) {
-      setError(getErrorMessage(err));
-    }
-  }
+  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+
+  if (loading) return <div className="min-h-screen bg-bg" />;
+  if (!session) return <SignInScreen supabase={supabase} />;
 
   return (
-    <div className="min-h-screen bg-white transition-colors duration-300 dark:bg-slate-950">
-      <div className="mx-auto max-w-3xl p-6">
-        <header className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">LeetTarget</h1>
-          <div className="flex items-center gap-3">
-            <ThemeToggle theme={theme} onToggle={() => setTheme((t) => (t === "dark" ? "light" : "dark"))} />
-            <button
-              onClick={onSignOut}
-              className="text-sm text-slate-500 transition-colors duration-200 hover:underline dark:text-slate-400"
-            >
-              Sign out
-            </button>
-          </div>
-        </header>
+    <ToastProvider>
+      <BrowserRouter>
+        <UserDataProvider userId={session.user.id}>
+          <AppShell theme={theme} onToggleTheme={toggleTheme} onSignOut={() => supabase.auth.signOut()}>
+            <Routes>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/practice" element={<PracticePage />} />
+              <Route path="/progress" element={<ProgressPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              {/* Anything unrecognised lands on the dashboard rather than a
+               * dead end — there's no deep content worth a 404 page here. */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AppShell>
+        </UserDataProvider>
+      </BrowserRouter>
+    </ToastProvider>
+  );
+}
 
-        <nav className="mt-6 flex gap-4 border-b border-slate-200 text-sm dark:border-slate-700">
-          {(["dashboard", "targets", "solved", "leaderboard", "settings"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={
-                "border-b-2 px-1 pb-2 transition-colors duration-200 " +
-                (tab === t
-                  ? "border-slate-900 font-medium text-slate-900 dark:border-slate-100 dark:text-slate-100"
-                  : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200")
-              }
-            >
-              {t === "dashboard"
-                ? "Dashboard"
-                : t === "targets"
-                  ? "Targets"
-                  : t === "solved"
-                    ? "Solved"
-                    : t === "leaderboard"
-                      ? "Leaderboard"
-                      : "Settings"}
-            </button>
-          ))}
-        </nav>
-
-        {error && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
-
-        <div className="mt-6 flex flex-col gap-6">
-          {tab === "dashboard" && (
-            <>
-              <ProgressSummary targets={targets} solved={solved} />
-              <DifficultyBreakdown userId={userId} refreshKey={refreshTick} />
-              <ImportLeetCode userId={userId} onImported={refresh} />
-              <div>
-                <h2 className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">Recent targets</h2>
-                <TargetsTable targets={targets.slice(0, 10)} />
-              </div>
-            </>
-          )}
-
-          {tab === "targets" && (
-            <>
-              <AddTargetForm userId={userId} onAdded={refresh} />
-              <CsvUploader userId={userId} targets={targets} onImported={refresh} />
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <h2 className="text-sm font-medium text-slate-700 dark:text-slate-300">All targets</h2>
-                  {targets.length > 0 && (
-                    <button
-                      onClick={() => downloadTargetsAsCsv(targets, "my-targets")}
-                      className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 transition-colors duration-200 dark:border-slate-600 dark:text-slate-300"
-                    >
-                      Download CSV
-                    </button>
-                  )}
-                </div>
-                <TargetsTable targets={targets} onRemove={handleRemove} />
-              </div>
-            </>
-          )}
-
-          {tab === "solved" && (
-            <div>
-              <h2 className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-                Solved problems &amp; solution mapping
-              </h2>
-              <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
-                Where LeetTarget thinks each solution lives in your repo — correct it if the guess is wrong.
-              </p>
-              <SolutionMappingTable userId={userId} refreshKey={refreshTick} />
-            </div>
-          )}
-
-          {tab === "leaderboard" && <Leaderboard currentUserId={userId} />}
-
-          {tab === "settings" && (
-            <>
-              <ProfileForm userId={userId} />
-              <RepoMappingForm userId={userId} onSynced={refresh} />
-              <ExtensionSetup userId={userId} />
-            </>
-          )}
-        </div>
+function SignInScreen({ supabase }: { supabase: SupabaseClient }) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-bg px-4">
+      <div className="w-full max-w-sm text-center">
+        <LogoMark className="mx-auto h-10 w-10" title="LeetTarget" />
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-text">
+          Leet<span className="text-brand">Target</span>
+        </h1>
+        <p className="mt-2 text-sm text-text-secondary">
+          Plan, solve, track and analyse your LeetCode practice — and map every solution back to your GitHub repo.
+        </p>
+        <Button
+          variant="primary"
+          size="lg"
+          className="mt-7 w-full"
+          onClick={() => supabase.auth.signInWithOAuth({ provider: "github" })}
+        >
+          <GithubIcon />
+          Sign in with GitHub
+        </Button>
       </div>
     </div>
   );

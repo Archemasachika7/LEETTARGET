@@ -1,7 +1,9 @@
-import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { UserCircle } from "lucide-react";
 import type { Profile } from "@leettarget/shared";
+import { getErrorMessage } from "../lib/errors.js";
 import { getLeetCodeUsername, getProfile, upsertProfileDetails, uploadAvatar } from "../lib/api.js";
+import { Badge, Button, Card, ErrorNote, Field, Input, SectionHeader, Textarea, useToast } from "../ui/index.js";
 
 interface Props {
   userId: string;
@@ -9,22 +11,19 @@ interface Props {
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
-/** Avatar + display name + bio, shown on the Settings tab. Uploading a
- * photo is independent of the name/bio form — each saves on its own.
- * Display name and bio are also what a leaderboard row shows for this
- * user (see the "Leaderboard" tab) — this is the public-facing identity,
- * separate from the LeetCode username shown read-only below (that's
- * actually set/changed from the Dashboard's "Import from LeetCode"
- * section, so there's one place that owns that flow rather than two). */
+/** Avatar, display name and bio — the public-facing identity other users see
+ * on the leaderboard. The linked LeetCode username is shown read-only because
+ * it's set from the Dashboard's import section; two places to change one
+ * value would just create a "which one wins?" question. */
 export function ProfileForm({ userId }: Props) {
   const [profile, setProfile] = useState<Profile>();
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
-  const [leetCodeUsername, setLeetCodeUsernameDisplay] = useState<string>();
+  const [leetCodeUsername, setLeetCodeUsername] = useState<string>();
   const [uploading, setUploading] = useState(false);
-  const [savingDetails, setSavingDetails] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
-  const [saved, setSaved] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     getProfile(userId)
@@ -35,28 +34,23 @@ export function ProfileForm({ userId }: Props) {
       })
       .catch((err) => setError(getErrorMessage(err)));
     getLeetCodeUsername(userId)
-      .then(setLeetCodeUsernameDisplay)
-      .catch(() => {}); // non-critical — just skips the display line
+      .then(setLeetCodeUsername)
+      .catch(() => {});
   }, [userId]);
 
   async function handleAvatarChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file.");
-      return;
-    }
-    if (file.size > MAX_AVATAR_BYTES) {
-      setError("Image is too large — please choose one under 2MB.");
-      return;
-    }
+    if (!file.type.startsWith("image/")) return setError("Please choose an image file.");
+    if (file.size > MAX_AVATAR_BYTES) return setError("Image is too large — please choose one under 2MB.");
 
     setUploading(true);
     setError(undefined);
     try {
       const avatarUrl = await uploadAvatar(userId, file);
       setProfile((prev) => ({ userId, displayName: prev?.displayName, bio: prev?.bio, avatarUrl }));
+      toast("Photo updated");
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -64,107 +58,95 @@ export function ProfileForm({ userId }: Props) {
     }
   }
 
-  async function handleDetailsSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setSavingDetails(true);
+    setSaving(true);
     setError(undefined);
     try {
       await upsertProfileDetails(userId, { bio, displayName });
       setProfile((prev) => ({ userId, avatarUrl: prev?.avatarUrl, displayName, bio }));
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast("Profile saved");
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
-      setSavingDetails(false);
+      setSaving(false);
     }
   }
 
-  const detailsChanged = displayName !== (profile?.displayName ?? "") || bio !== (profile?.bio ?? "");
+  const changed = displayName !== (profile?.displayName ?? "") || bio !== (profile?.bio ?? "");
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-800">
-      <h3 className="font-semibold text-slate-900 dark:text-slate-100">Profile</h3>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        Shown on the leaderboard — your name/bio here, and the difficulty breakdown and target list from
-        the rest of the app, are visible to other signed-in users.
-      </p>
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-        LeetCode:{" "}
-        {leetCodeUsername ? (
-          <span className="font-medium text-slate-700 dark:text-slate-300">{leetCodeUsername}</span>
-        ) : (
-          <span>not linked yet — set it from the Dashboard's "Import from LeetCode" section.</span>
-        )}
-      </p>
+    <Card as="form" onSubmit={handleSubmit} className="flex flex-col gap-5 p-4">
+      <SectionHeader
+        title="Public profile"
+        description="Shown on the leaderboard, along with your difficulty breakdown and target list."
+        icon={<UserCircle className="h-4 w-4 text-text-muted" aria-hidden />}
+      />
 
-      <div className="mt-4 flex items-center gap-4">
-        <div className="relative">
+      <div className="flex items-center gap-4">
+        <div className="relative shrink-0">
           {profile?.avatarUrl ? (
             <img
               src={profile.avatarUrl}
-              alt="Profile avatar"
-              className="h-16 w-16 rounded-full object-cover ring-1 ring-slate-200 dark:ring-slate-700"
+              alt=""
+              className="h-16 w-16 rounded-full object-cover ring-1 ring-border"
             />
           ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-lg font-medium text-slate-400 dark:bg-slate-700 dark:text-slate-500">
-              ?
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface ring-1 ring-border">
+              <UserCircle className="h-7 w-7 text-text-muted" aria-hidden />
             </div>
           )}
           {uploading && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-white/70 text-xs text-slate-600 dark:bg-slate-900/70 dark:text-slate-300">
-              ...
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-bg/70 text-[11px] text-text-secondary">
+              …
             </div>
           )}
         </div>
 
-        <label className="cursor-pointer rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors duration-200 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700">
-          {uploading ? "Uploading..." : profile?.avatarUrl ? "Change photo" : "Upload photo"}
-          <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={uploading} />
-        </label>
+        <div className="min-w-0">
+          <label className="inline-flex h-9 cursor-pointer items-center rounded border border-border bg-elevated px-3.5 text-sm font-medium text-text transition-colors duration-fast hover:border-border-strong hover:bg-surface">
+            {uploading ? "Uploading…" : profile?.avatarUrl ? "Change photo" : "Upload photo"}
+            <input type="file" accept="image/*" className="sr-only" onChange={handleAvatarChange} disabled={uploading} />
+          </label>
+          <p className="mt-1.5 text-[12px] text-text-muted">PNG or JPG, up to 2MB.</p>
+        </div>
       </div>
 
-      <form onSubmit={handleDetailsSubmit} className="mt-4 flex flex-col gap-3">
-        <div>
-          <label htmlFor="displayName" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Display name
-          </label>
-          <input
-            id="displayName"
-            maxLength={60}
-            placeholder="Shown on the leaderboard instead of a blank row"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            className="mt-1 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 transition-colors duration-200 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-          />
-        </div>
-        <div>
-          <label htmlFor="bio" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Bio
-          </label>
-          <textarea
-            id="bio"
-            rows={3}
-            maxLength={280}
-            placeholder="A short line about your LeetCode journey..."
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            className="mt-1 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 transition-colors duration-200 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={savingDetails || !detailsChanged}
-            className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white transition-colors duration-200 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
-          >
-            {savingDetails ? "Saving..." : "Save"}
-          </button>
-          {saved && <span className="text-sm text-green-700 dark:text-green-400">Saved.</span>}
-        </div>
-      </form>
+      <div className="flex flex-wrap items-center gap-2 text-[13px] text-text-muted">
+        LeetCode account:
+        {leetCodeUsername ? (
+          <Badge tone="brand">{leetCodeUsername}</Badge>
+        ) : (
+          <span>not linked — set it from the Dashboard's import section.</span>
+        )}
+      </div>
 
-      {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
-    </div>
+      <Field label="Display name" htmlFor="display-name" hint="Shown on the leaderboard instead of a blank row.">
+        <Input
+          id="display-name"
+          maxLength={60}
+          placeholder="How you want to appear"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+        />
+      </Field>
+
+      <Field label="Bio" htmlFor="bio">
+        <Textarea
+          id="bio"
+          rows={3}
+          maxLength={280}
+          placeholder="A short line about your LeetCode journey…"
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+        />
+      </Field>
+
+      <Button type="submit" variant="primary" disabled={!changed} loading={saving} loadingText="Saving…" className="self-start">
+        Save profile
+      </Button>
+
+      {error && <ErrorNote>{error}</ErrorNote>}
+    </Card>
   );
 }

@@ -1,20 +1,19 @@
-import { getErrorMessage } from "../lib/errors.js";
 import { useEffect, useState } from "react";
+import { Check, Copy, Puzzle } from "lucide-react";
 import type { ExtensionSetupCode } from "@leettarget/shared";
+import { getErrorMessage } from "../lib/errors.js";
 import { getGithubLink } from "../lib/api.js";
 import { supabase } from "../lib/supabaseClient.js";
+import { Button, Card, ErrorNote, SectionHeader, Textarea } from "../ui/index.js";
 
 interface Props {
   userId: string;
 }
 
-/** Generates a one-paste setup code for the extension's options page —
- * Supabase URL/anon key, this session's access + refresh token, and the
- * repo mapping. Replaces copying ~7 fields by hand (several of which
- * used to be a short-lived access token with no way to refresh it) with
- * one copy on the site and one paste in the extension. The GitHub PAT
- * itself is deliberately never included — it's never sent to or stored in
- * Supabase, only ever local to the extension. */
+/** Generates a one-paste setup code for the extension's options page:
+ * Supabase URL/anon key, this session's access + refresh token, and the repo
+ * mapping. The GitHub PAT is deliberately never included — it's never sent to
+ * or stored in Supabase, only ever local to the extension. */
 export function ExtensionSetup({ userId }: Props) {
   const [code, setCode] = useState<string>();
   const [error, setError] = useState<string>();
@@ -60,37 +59,36 @@ export function ExtensionSetup({ userId }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 transition-colors duration-300 dark:border-slate-700 dark:bg-slate-800">
-      <h3 className="font-semibold text-slate-900 dark:text-slate-100">Extension setup</h3>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        Copy this into the extension's options page ("Paste setup code from site") to wire it up to
-        this account — it fills in your repo mapping too, so all that's left is your GitHub personal
-        access token.
-      </p>
+    <Card className="flex flex-col gap-4 p-4">
+      <SectionHeader
+        title="Browser extension"
+        description={`Paste this into the extension's options page to wire it up to this account.`}
+        icon={<Puzzle className="h-4 w-4 text-text-muted" aria-hidden />}
+      />
 
-      {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <ErrorNote>{error}</ErrorNote>}
 
       {code && (
         <>
-          <textarea
+          <Textarea
             readOnly
             value={code}
-            rows={8}
-            className="mt-3 w-full rounded border border-slate-300 bg-slate-50 p-2 font-mono text-xs text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+            rows={7}
+            aria-label="Extension setup code"
+            className="bg-surface font-mono text-[11px] leading-relaxed"
             onFocus={(e) => e.currentTarget.select()}
           />
-          <button
-            onClick={handleCopy}
-            className="mt-2 rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white transition-colors duration-200 dark:bg-slate-100 dark:text-slate-900"
-          >
-            {copied ? "Copied!" : "Copy setup code"}
-          </button>
-          <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-            Contains a live access token — treat it like a password, and re-copy a fresh one if you
-            think it leaked (signing out and back in rotates it).
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="primary" onClick={handleCopy}>
+              {copied ? <Check className="h-3.5 w-3.5" aria-hidden /> : <Copy className="h-3.5 w-3.5" aria-hidden />}
+              {copied ? "Copied" : "Copy setup code"}
+            </Button>
+            <p className="text-[12px] text-warning">
+              Contains a live access token — treat it like a password.
+            </p>
+          </div>
         </>
       )}
-    </div>
+    </Card>
   );
 }
