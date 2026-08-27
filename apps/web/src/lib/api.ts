@@ -7,6 +7,7 @@ import type {
   SolvedProblem,
   Target,
   TargetSource,
+  TargetStatus,
   TopicProblem,
   UserGoals,
 } from "@leettarget/shared";
@@ -141,6 +142,56 @@ export async function replaceCsvTargets(
 export async function deleteTarget(id: string): Promise<void> {
   const { error } = await requireClient().from("targets").delete().eq("id", id);
   if (error) throw error;
+}
+
+/** Marks a target done (or back to pending) by hand.
+ *
+ * Targets are normally closed automatically when a matching solve arrives
+ * from the extension, a LeetCode import or a repo scan. This is the manual
+ * path for a practice session, where the reader has just solved something and
+ * shouldn't have to wait for a sync to see it reflected. It only moves the
+ * target's own status — it does not invent a `solved_problems` row, because
+ * that table means "LeetTarget observed this solve", and a checkbox isn't an
+ * observation. */
+export async function setTargetStatus(id: string, status: TargetStatus): Promise<void> {
+  const { error } = await requireClient().from("targets").update({ status }).eq("id", id);
+  if (error) throw error;
+}
+
+export interface DetailedTarget extends Target {
+  difficulty: Problem["difficulty"];
+  topics: string[];
+}
+
+/** Targets joined to whatever the catalogue knows about each problem, so a
+ * practice session can filter by difficulty and topic.
+ *
+ * A target created from a CSV names a problem by slug without necessarily
+ * having a `problems` row, so anything unmatched comes back as "Unknown" with
+ * no topics rather than being dropped — it's still a problem worth solving. */
+export async function listDetailedTargets(userId: string): Promise<DetailedTarget[]> {
+  const client = requireClient();
+  const targets = await listTargets(userId);
+
+  const slugs = [...new Set(targets.map((t) => t.slug).filter((s): s is string => Boolean(s)))];
+  if (slugs.length === 0) {
+    return targets.map((t) => ({ ...t, difficulty: "Unknown" as const, topics: [] }));
+  }
+
+  const { data, error } = await client.from("problems").select("slug, difficulty, tags").in("slug", slugs);
+  if (error) throw error;
+
+  const bySlug = new Map(
+    (data ?? []).map((p) => [
+      p.slug as string,
+      { difficulty: p.difficulty as Problem["difficulty"], topics: (p.tags as string[] | null) ?? [] },
+    ])
+  );
+
+  return targets.map((t) => {
+    const meta = t.slug ? bySlug.get(t.slug) : undefined;
+    return { ...t, difficulty: meta?.difficulty ?? "Unknown", topics: meta?.topics ?? [] };
+  });
 }
 
 // --- github repo mapping -------------------------------------------------
