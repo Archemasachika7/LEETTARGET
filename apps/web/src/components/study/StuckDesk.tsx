@@ -269,13 +269,19 @@ export function StuckDesk({ mode }: { mode: Exclude<StudyTrack, "leetcode"> }) {
 
               <div>
                 <p className="text-[13px] font-medium text-text-secondary">Study material</p>
-                <p className="mt-1 text-[12px] leading-5 text-text-muted">Optional. Add PNG, JPG, PDF, text, or another file type—up to 8 files and 12 MB per file.</p>
-                <input ref={attachmentInputRef} type="file" multiple className="sr-only" onChange={handleAttachmentSelection} aria-label="Add files to this question" />
+                <p className="mt-1 text-[12px] leading-5 text-text-muted">Optional. Attach the screenshot, prompt, or working you want beside this question—up to 8 files and 12 MB per file.</p>
+                <div className="mt-3 flex flex-wrap items-center gap-1.5" aria-label="Supported file formats">
+                  {['PNG', 'JPG', 'PDF', 'TXT', 'MD', 'CSV'].map((format) => (
+                    <span key={format} className="border border-border bg-bg px-2 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-text-muted">.{format.toLowerCase()}</span>
+                  ))}
+                  <span className="ml-1 text-[11px] text-text-muted">and other study files</span>
+                </div>
+                <input ref={attachmentInputRef} type="file" accept="image/png,image/jpeg,text/plain,text/markdown,text/csv,application/pdf,.png,.jpg,.jpeg,.txt,.md,.csv,.pdf" multiple className="sr-only" onChange={handleAttachmentSelection} aria-label="Add PNG, JPG, text, PDF, or other study files to this question" />
                 <input ref={folderInputRef} type="file" multiple className="sr-only" onChange={handleAttachmentSelection} aria-label="Add a folder to this question" />
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Button type="button" size="sm" variant="secondary" onClick={() => attachmentInputRef.current?.click()}>
                     <Paperclip className="h-3.5 w-3.5" aria-hidden />
-                    Add files
+                    Add PNG / JPG / text
                   </Button>
                   <Button type="button" size="sm" variant="ghost" onClick={() => folderInputRef.current?.click()}>
                     <FolderUp className="h-3.5 w-3.5" aria-hidden />
