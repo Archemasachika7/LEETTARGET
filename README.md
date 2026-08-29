@@ -1,113 +1,70 @@
 # LeetTarget
 
-Track your LeetCode progress, map solved problems to the GitHub repo you
-already commit solutions to (LeetHub-compatible), and set solve **targets**
-one at a time or in bulk via CSV.
+I kept losing track of which LeetCode problems I had solved, which ones I was
+supposed to revise, and whether any of it showed up on my GitHub. So I built
+this to keep all of it in one place.
 
-See [`Plan.md`](./Plan.md) for architecture/milestones and
-[`PROMPT.md`](./PROMPT.md) for the product spec this was built against.
+## What it is
 
-## What's in here
+Three things that talk to each other:
 
-- **`apps/web`** — the dashboard (React + Vite + TypeScript + Tailwind).
-  Connect your GitHub repo, upload a CSV of targets, add targets by hand,
-  and see your solved/target mapping.
-- **`apps/extension`** — a Manifest V3 browser extension for `leetcode.com`.
-  Detects accepted submissions, commits the solution to your GitHub repo
-  (like LeetHub), and syncs the solve to LeetTarget so the dashboard stays
-  current automatically.
-- **`packages/shared`** — types, the CSV parser, a minimal LeetCode client,
-  and a minimal GitHub REST client, shared by both apps.
-- **`supabase`** — Postgres schema + an edge function that proxies
-  LeetCode's public GraphQL API (browsers can't call it directly due to
-  CORS).
+- A web dashboard. Track solved problems by topic and difficulty, set targets,
+  follow a roadmap, import your LeetCode history from CSV, and see a
+  leaderboard if you add friends.
+- A browser extension. When LeetCode accepts your submission, it commits the
+  solution to your GitHub repo (like LeetHub) and syncs the solve back to the
+  dashboard, so everything stays current without me doing anything.
+- An ATS score evaluator (new). Paste your resume, get a score out of 100 with
+  the specific fixes that will move it. Paste the job description too and it
+  scores keyword match against what the ATS is actually filtering for. If you
+  score under 90, it points you at a free ATS-safe builder instead of letting
+  you apply with a losing resume.
 
-## Features
+## Repo layout
 
-- Fetches how many problems you've solved, and which ones, from live
-  extension activity and (optionally) LeetCode's public API.
-- Maps each solved problem to the GitHub file that holds its solution.
-- Upload a CSV (`Question,Link` — plain URL or Excel `HYPERLINK()` formula)
-  to set a batch of targets; re-upload anytime to update the map without
-  losing solve history.
-- Add a single target from the site, no CSV needed.
-- Works alongside an existing LeetHub-style repo — no migration required.
+```
+apps/web        React + Vite + TypeScript + Tailwind dashboard
+apps/extension  Chrome extension that watches leetcode.com submissions
+packages/shared Types and utilities shared between the two
+supabase        Migrations plus edge functions (daily-import, leetcode-proxy)
+```
 
-## Getting started
+## Running the web app
 
-### Prerequisites
-
-- Node.js 18+
-- A Supabase project (for the site's database + GitHub OAuth) — see
-  `supabase/README.md`.
-- A GitHub personal access token with `repo` scope (for the extension to
-  commit solutions) — a full GitHub App flow is on the roadmap, see
-  `Plan.md`.
-
-### Install
-
-```bash
+```
+cd apps/web
 npm install
+npm run dev
 ```
 
-This installs all workspaces (`apps/web`, `apps/extension`,
-`packages/shared`) via npm workspaces.
+Copy `apps/web/.env.example` and fill in your Supabase URL and anon key.
 
-### Run the web app
+## Optional: AI-written resume feedback
 
-```bash
-cp apps/web/.env.example apps/web/.env.local
-# fill in your Supabase URL + anon key
-npm run dev:web
+The ATS evaluator works fully offline — the score, the breakdown, and the fix
+list are all computed in the browser with plain rules. If you also want a
+second opinion written by a model, get a free key at console.groq.com (no
+card needed) and add it to `apps/web/.env`:
+
+```
+VITE_GROQ_API_KEY=gsk_...
 ```
 
-### Build the extension
+That turns on a Gemma 2 9B feedback block on the ATS page. Without the key,
+the page works exactly the same minus that one block. Fair warning: the key
+lives in the browser bundle, so do not ship this to real users as-is — the
+Groq call should move behind a Supabase edge function first.
 
-```bash
-npm run build:ext
-```
+## Things I still want to do
 
-Then load `apps/extension/dist` as an unpacked extension in Chrome
-(`chrome://extensions` → Developer mode → Load unpacked). See
-`apps/extension/README.md` for the options-page setup (GitHub repo + PAT).
+- PDF/DOCX upload on the ATS page instead of copy-paste
+- Move the Groq call into an edge function
+- Per-topic revision reminders based on how long since I last solved something
+- Dark mode that does not hurt my eyes
 
-### Database
+## Why it exists
 
-Apply the schema in `supabase/migrations/0001_init.sql` to your Supabase
-project (`supabase db push` from the Supabase CLI, or paste it into the SQL
-editor). See `supabase/README.md` for the edge function deploy steps.
-
-## Deploying the site (Vercel)
-
-`apps/web` is a static Vite build with no server-side code of its own (auth,
-DB, and the LeetCode proxy all live in Supabase), so a static host works
-fine — Vercel's free tier is a reasonable default:
-
-1. Import the repo in Vercel and set **Root Directory** to `apps/web`. This
-   repo is an npm-workspaces monorepo — `apps/web/vercel.json` explicitly
-   `cd`s to the repo root for install/build so the `@leettarget/shared`
-   workspace link resolves correctly, independent of Vercel's monorepo
-   auto-detection.
-2. Add the environment variables from `apps/web/.env.example`
-   (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and optionally
-   `VITE_LEETCODE_PROXY_URL`) in the Vercel project's Settings →
-   Environment Variables.
-3. Deploy. Once you have the `*.vercel.app` URL (or a custom domain), add it
-   to your Supabase project's **Authentication → URL Configuration** (Site
-   URL / Redirect URLs) — same requirement as `http://localhost:5173` for
-   local dev, just for the deployed origin. Skipping this step is the most
-   common way GitHub sign-in silently fails post-deploy.
-
-## Project status
-
-Core structure, the CSV/GitHub/LeetCode clients, and the extension's
-submission-detection + GitHub-commit path are in place. GitHub OAuth and the
-schema are live against a real Supabase project; "Import from LeetCode" is
-code-complete but needs `leetcode-proxy` deployed to do anything. Not yet
-exercised end-to-end: a real extension solve syncing to that project, and a
-production deploy. Track progress against [`PROMPT.md`](./PROMPT.md)'s
-checklist and [`Plan.md`](./Plan.md)'s milestones.
-
-## License
-
-Unlicensed for now — add one before any public release.
+Every tracker I tried either wanted a subscription, needed manual entry after
+every solve, or looked abandoned. I wanted something I could actually hack on,
+so here we are. It is rough in places. It gets better when I notice the rough
+parts.
