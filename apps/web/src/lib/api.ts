@@ -472,6 +472,49 @@ export async function listLeaderboard(): Promise<LeaderboardEntry[]> {
   }));
 }
 
+/** Last time the public "Sync everyone" run finished, and its one-line
+ * summary — read-only for clients (see migration 0011_sync_state.sql; only
+ * the sync-all-profiles edge function, running as service role, writes
+ * this row). Used to show "synced 4 minutes ago" without having to call the
+ * function itself just to check. */
+export async function getSyncState(): Promise<{ lastSyncedAt?: string; lastSummary?: string }> {
+  const { data, error } = await requireClient()
+    .from("sync_state")
+    .select("last_synced_at, last_summary")
+    .eq("id", true)
+    .maybeSingle();
+  if (error) throw error;
+  return { lastSyncedAt: data?.last_synced_at ?? undefined, lastSummary: data?.last_summary ?? undefined };
+}
+
+export interface SyncAllProfilesResult {
+  skipped: boolean;
+  /** Present when `skipped` — how long until another run is allowed. */
+  nextAvailableAt?: string;
+  lastSyncedAt?: string;
+  lastSummary?: string;
+  processed?: number;
+}
+
+/** Runs the same per-profile LeetCode import as the scheduled daily job,
+ * but for everyone at once and on demand — the Leaderboard's public "Sync
+ * everyone" button. The edge function itself enforces a cooldown (see
+ * supabase/functions/sync-all-profiles), so a burst of clicks from
+ * different users just gets back the same cached result rather than each
+ * kicking off a fresh full import. */
+export async function syncAllProfiles(proxyUrl: string): Promise<SyncAllProfilesResult> {
+  const proxyApiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const res = await fetch(proxyUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(proxyApiKey ? { apikey: proxyApiKey, Authorization: `Bearer ${proxyApiKey}` } : {}),
+    },
+  });
+  if (!res.ok) throw new Error(`Sync failed (HTTP ${res.status}).`);
+  return (await res.json()) as SyncAllProfilesResult;
+}
+
 // --- topics ----------------------------------------------------------------
 
 /** Every problem in this user's world — the ones they've solved, plus the
