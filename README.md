@@ -50,10 +50,11 @@ card needed) and add it to `apps/web/.env`:
 VITE_GROQ_API_KEY=gsk_...
 ```
 
-That turns on a Gemma 2 9B feedback block on the ATS page. Without the key,
-the page works exactly the same minus that one block. Fair warning: the key
-lives in the browser bundle, so do not ship this to real users as-is — the
-Groq call should move behind a Supabase edge function first.
+That turns on a second-opinion feedback block on the ATS page (and the
+floating assistant widget's chat). Without the key, the page works exactly
+the same minus that one block. Fair warning: the key lives in the browser
+bundle, so do not ship this to real users as-is — the Groq call should move
+behind a Supabase edge function first.
 
 ## Things I still want to do
 

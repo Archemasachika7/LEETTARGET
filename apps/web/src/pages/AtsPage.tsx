@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import { analyzeResume } from "../lib/ats/scorer";
 import type { AtsReport, AtsSeverity } from "../lib/ats/scorer";
-import { gemmaEnabled, getGemmaSuggestions } from "../lib/ats/llm";
+import { secondOpinionEnabled, getSecondOpinion } from "../lib/ats/llm";
 import { Badge, Button, Card, EmptyState, Eyebrow, Field, SectionHeader, Textarea } from "../ui/index.js";
 import { cn } from "../lib/cn.js";
 
@@ -57,9 +57,9 @@ export default function AtsPage() {
     setTips(null);
     const result = analyzeResume(resumeText, jdText.trim().length > 0 ? jdText : undefined);
     setReport(result);
-    if (gemmaEnabled()) {
-      const gemmaTips = await getGemmaSuggestions(result, resumeText);
-      setTips(gemmaTips);
+    if (secondOpinionEnabled()) {
+      const opinionTips = await getSecondOpinion(result, resumeText);
+      setTips(opinionTips);
     }
     setBusy(false);
   }
@@ -229,7 +229,7 @@ export default function AtsPage() {
 
           {tips && tips.length > 0 && (
             <Card className="p-6">
-              <SectionHeader title="Second opinion — Gemma 2 (free tier)" />
+              <SectionHeader title="Second opinion" />
               <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-text-secondary">
                 {tips.map((t, i) => (
                   <li key={i}>{t}</li>
