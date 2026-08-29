@@ -39,9 +39,13 @@ export async function geminiChat(
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 15000);
-    const res = await fetch(`${GEMINI_ENDPOINT}/${options.model}:generateContent?key=${encodeURIComponent(key)}`, {
+    const res = await fetch(`${GEMINI_ENDPOINT}/${options.model}:generateContent`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // Some Google AI Studio keys (the newer "AQ."-prefixed format) 404
+      // against the ?key= query-parameter auth method most examples still
+      // use — the x-goog-api-key header is Google's current documented
+      // method and works for both key formats.
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
       body: JSON.stringify({
         contents,
         ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
