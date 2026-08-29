@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Download, ListChecks, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Download, ListChecks, MessageCircleQuestion, Plus } from "lucide-react";
 import { useUserData } from "../lib/userData.js";
 import { deleteTarget, listDetailedTargets, type DetailedTarget } from "../lib/api.js";
 import { downloadTargetsAsCsv } from "../lib/downloadCsv.js";
@@ -58,9 +59,17 @@ export function PracticePage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header>
-        <h1 className="text-xl font-semibold tracking-tight text-text">Practice</h1>
-        <p className="mt-1 text-sm text-text-muted">Work through a focused run, or shape the list it draws from.</p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-text">Practice</h1>
+          <p className="mt-1 text-sm text-text-muted">Work through a focused run, or shape the list it draws from.</p>
+        </div>
+        <Link to="/doubts">
+          <Button size="sm" variant="ghost">
+            <MessageCircleQuestion className="h-3.5 w-3.5" aria-hidden />
+            Community doubts
+          </Button>
+        </Link>
       </header>
 
       {error && <ErrorNote>{error}</ErrorNote>}
