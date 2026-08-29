@@ -130,3 +130,19 @@ export interface LeaderboardEntry {
   targetCount: number;
   doneCount: number;
 }
+
+/** A timed practice session, joinable by a short shareable code. Everyone
+ * with the code sees the same countdown because it's derived from
+ * `startedAt` + `durationSeconds` — no realtime sync needed, every client
+ * computes the identical remaining time on its own clock. Not tied to a
+ * specific target/problem in v1 — `label` is a free-text description the
+ * host can optionally set ("Two Sum + Group Anagrams", "Mock interview"). */
+export interface PracticeSession {
+  id: string;
+  code: string;
+  hostUserId: string;
+  label?: string;
+  durationSeconds: number;
+  startedAt: string;
+  createdAt: string;
+}
