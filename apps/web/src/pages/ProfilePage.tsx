@@ -2,9 +2,11 @@ import { useUserData } from "../lib/userData.js";
 import { ProfileForm } from "../components/ProfileForm.js";
 import { RepoMappingForm } from "../components/RepoMappingForm.js";
 import { ExtensionSetup } from "../components/ExtensionSetup.js";
+import { ColdmailerLink } from "../components/ColdmailerLink.js";
 
 /** Identity and integrations in one place — who you are on the leaderboard,
- * and the two connections (GitHub repo, browser extension) that feed data in. */
+ * the connections (GitHub repo, browser extension) that feed data in, and a
+ * door out to Coldmailer for turning solved problems into applications. */
 export function ProfilePage() {
   const { userId, refresh } = useUserData();
 
@@ -21,6 +23,7 @@ export function ProfilePage() {
         <h2 className="text-sm font-semibold text-text">Integrations</h2>
         <RepoMappingForm userId={userId} onSynced={refresh} />
         <ExtensionSetup userId={userId} />
+        <ColdmailerLink />
       </section>
     </div>
   );
