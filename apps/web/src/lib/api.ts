@@ -511,7 +511,13 @@ export async function syncAllProfiles(proxyUrl: string): Promise<SyncAllProfiles
       ...(proxyApiKey ? { apikey: proxyApiKey, Authorization: `Bearer ${proxyApiKey}` } : {}),
     },
   });
-  if (!res.ok) throw new Error(`Sync failed (HTTP ${res.status}).`);
+  if (!res.ok) {
+    // The function always returns JSON with an `error` field on failure
+    // (see sync-all-profiles's own error handling) — surface that instead
+    // of a bare status code when it's there.
+    const body = await res.json().catch(() => undefined);
+    throw new Error(body?.error ?? `Sync failed (HTTP ${res.status}).`);
+  }
   return (await res.json()) as SyncAllProfilesResult;
 }
 
