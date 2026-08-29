@@ -25,6 +25,17 @@
 const LEETCODE_GRAPHQL_ENDPOINT = "https://leetcode.com/graphql";
 const COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
 
+// Called straight from the browser (that's the whole point of this
+// function, unlike daily-import), so it needs the same CORS handling as
+// leetcode-proxy: without it the browser's preflight OPTIONS request gets
+// no Access-Control-Allow-* headers back, and the real POST never even
+// reaches this code — it just shows up client-side as "Failed to fetch".
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 const RECENT_QUERY = `
 query recentAcSubmissions($username: String!, $limit: Int!) {
   recentAcSubmissionList(username: $username, limit: $limit) {
@@ -59,7 +70,11 @@ interface ImportOutcome {
   error?: string;
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const headers = {
@@ -237,6 +252,6 @@ async function fetchRecentSubmissions(username: string): Promise<RecentSubmissio
 function json(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
   });
 }
