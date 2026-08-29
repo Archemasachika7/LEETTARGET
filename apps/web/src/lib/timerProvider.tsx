@@ -1,12 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPracticeSession, getPracticeSessionByCode } from "./timerSession.js";
 import { openTimerPip, pipSupported as pipIsSupported, type PipHandle } from "./pip.js";
-import { formatCountdown, useCountdown } from "./useCountdown.js";
+import { formatDuration, useTimerTick } from "./useTimerTick.js";
 import { getErrorMessage } from "./errors.js";
 
 export interface ActiveTimerSession {
   startedAt: string;
-  durationSeconds: number;
+  /** Absent means an open-ended stopwatch — counts up, no end. */
+  durationSeconds?: number;
   /** Free-text description, host-set — shared sessions only. */
   label?: string;
   /** Present only for a shared session; absent for a solo timer. */
@@ -15,14 +16,17 @@ export interface ActiveTimerSession {
 
 interface TimerContextValue {
   active?: ActiveTimerSession;
+  elapsedSeconds: number;
   remainingSeconds: number;
   done: boolean;
+  isStopwatch: boolean;
   busy: boolean;
   error?: string;
   pipOpen: boolean;
   pipSupported: boolean;
-  startSolo: (durationSeconds: number) => void;
-  startShared: (userId: string, durationSeconds: number, label?: string) => Promise<void>;
+  /** Omit `durationSeconds` to start an open-ended stopwatch instead of a countdown. */
+  startSolo: (durationSeconds?: number) => void;
+  startShared: (userId: string, durationSeconds?: number, label?: string) => Promise<void>;
   join: (code: string) => Promise<boolean>;
   popOut: () => Promise<void>;
   stop: () => void;
@@ -32,10 +36,11 @@ interface TimerContextValue {
 const TimerContext = createContext<TimerContextValue | undefined>(undefined);
 
 /** Lives above the router (see AppShell), not inside the Practice page, so
- * the countdown and an open Picture-in-Picture window both keep running
- * while you navigate to other pages in the app — not just while you're on
- * a different tab or site entirely. A page-scoped component would stop
- * ticking (and freeze the PiP display) the moment you left /practice. */
+ * the countdown/stopwatch and an open Picture-in-Picture window both keep
+ * running while you navigate to other pages in the app — not just while
+ * you're on a different tab or site entirely. A page-scoped component
+ * would stop ticking (and freeze the PiP display) the moment you left
+ * /practice. */
 export function TimerProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState<ActiveTimerSession>();
   const [busy, setBusy] = useState(false);
@@ -43,20 +48,21 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   const [pipOpen, setPipOpen] = useState(false);
   const pipRef = useRef<PipHandle>();
 
-  const { remainingSeconds, done } = useCountdown(active?.startedAt, active?.durationSeconds);
+  const { elapsedSeconds, remainingSeconds, done, isStopwatch } = useTimerTick(active?.startedAt, active?.durationSeconds);
+  const displaySeconds = isStopwatch ? elapsedSeconds : remainingSeconds;
 
   useEffect(() => {
     if (!active || !pipRef.current) return;
     const label = active.label ?? (active.code ? `Session ${active.code}` : undefined);
-    pipRef.current.setText(done ? "Done" : formatCountdown(remainingSeconds), label);
-  }, [remainingSeconds, done, active]);
+    pipRef.current.setText(done ? "Done" : formatDuration(displaySeconds), label);
+  }, [displaySeconds, done, active]);
 
-  const startSolo = useCallback((durationSeconds: number) => {
+  const startSolo = useCallback((durationSeconds?: number) => {
     setActive({ startedAt: new Date().toISOString(), durationSeconds });
     setError(undefined);
   }, []);
 
-  const startShared = useCallback(async (userId: string, durationSeconds: number, label?: string) => {
+  const startShared = useCallback(async (userId: string, durationSeconds?: number, label?: string) => {
     setBusy(true);
     setError(undefined);
     try {
@@ -107,10 +113,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       pipRef.current = undefined;
       setPipOpen(false);
     });
-    handle.setText(formatCountdown(remainingSeconds));
+    handle.setText(formatDuration(displaySeconds));
     pipRef.current = handle;
     setPipOpen(true);
-  }, [active, remainingSeconds]);
+  }, [active, displaySeconds]);
 
   const stop = useCallback(() => {
     pipRef.current?.close();
@@ -125,8 +131,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     <TimerContext.Provider
       value={{
         active,
+        elapsedSeconds,
         remainingSeconds,
         done,
+        isStopwatch,
         busy,
         error,
         pipOpen,
