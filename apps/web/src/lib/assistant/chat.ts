@@ -1,14 +1,5 @@
 import { askLlm, llmEnabled } from "../llm.js";
 
-/** Kimi K2 on Groq's free tier, gemini-2.0-flash as the fallback. Groq
- * periodically moves models between its free and enterprise-only tiers
- * without much notice (Llama 3.1/3.3 both moved to Contact-Sales-only in
- * Aug 2026) — check console.groq.com/docs/models before assuming this is
- * still current. The Gemini fallback only fires when Groq comes back
- * empty, so this keeps working through the next such move too. */
-const GROQ_MODEL = "moonshotai/kimi-k2-instruct";
-const GEMINI_MODEL = "gemini-2.0-flash";
-
 export const assistantEnabled = llmEnabled;
 
 export interface ChatTurn {
@@ -31,5 +22,5 @@ export async function askAssistant(history: ChatTurn[], dataSummary: string): Pr
     { role: "system" as const, content: `${SYSTEM_PREAMBLE}\n\nDATA:\n${dataSummary}` },
     ...history.map((turn) => ({ role: turn.role, content: turn.content })),
   ];
-  return askLlm(messages, { groqModel: GROQ_MODEL, geminiModel: GEMINI_MODEL, temperature: 0.3, maxTokens: 500 });
+  return askLlm(messages, { temperature: 0.3, maxTokens: 500 });
 }

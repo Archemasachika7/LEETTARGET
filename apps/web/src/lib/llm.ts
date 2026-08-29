@@ -3,18 +3,31 @@ import { geminiChat, geminiEnabled } from "./gemini.js";
 
 export type LlmMessage = GroqMessage;
 
+/**
+ * Both providers move model IDs around without much notice — Groq shifted
+ * several models to Enterprise-only in Aug 2026, and Google retired
+ * gemini-2.0-flash for new keys in Jun 2026, both breaking this app in
+ * production. Defined once here rather than per call site, since the fix
+ * for a rename is the same one-line edit wherever it's used. Check
+ * console.groq.com/docs/models and ai.google.dev/gemini-api/docs/models
+ * before assuming these are still current.
+ */
+export const DEFAULT_GROQ_MODEL = "moonshotai/kimi-k2-instruct-0905";
+export const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+
 export function llmEnabled(): boolean {
   return groqEnabled() || geminiEnabled();
 }
 
 export interface LlmModelChoice {
   /** Groq model ID — tried first. Groq is faster and is the key most people
-   * set up initially, but it periodically moves models off its free tier
-   * without much notice (see the Aug 2026 Llama/Gemma move). */
-  groqModel: string;
+   * set up initially. Defaults to DEFAULT_GROQ_MODEL; override only if a
+   * particular call site genuinely needs a different model. */
+  groqModel?: string;
   /** Gemini model ID — used only if the Groq call comes back empty (no key,
-   * rate-limited, or a model Groq no longer allows on a free key). */
-  geminiModel: string;
+   * rate-limited, or a model Groq no longer allows on a free key). Defaults
+   * to DEFAULT_GEMINI_MODEL. */
+  geminiModel?: string;
   temperature?: number;
   maxTokens?: number;
   timeoutMs?: number;
@@ -26,9 +39,9 @@ export interface LlmModelChoice {
  * callers treat that as the normal "no answer available" case, not an
  * error to surface.
  */
-export async function askLlm(messages: LlmMessage[], choice: LlmModelChoice): Promise<string | null> {
+export async function askLlm(messages: LlmMessage[], choice: LlmModelChoice = {}): Promise<string | null> {
   const groqResult = await groqChat(messages, {
-    model: choice.groqModel,
+    model: choice.groqModel ?? DEFAULT_GROQ_MODEL,
     temperature: choice.temperature,
     maxTokens: choice.maxTokens,
     timeoutMs: choice.timeoutMs,
@@ -36,7 +49,7 @@ export async function askLlm(messages: LlmMessage[], choice: LlmModelChoice): Pr
   if (groqResult) return groqResult;
 
   return geminiChat(messages, {
-    model: choice.geminiModel,
+    model: choice.geminiModel ?? DEFAULT_GEMINI_MODEL,
     temperature: choice.temperature,
     maxOutputTokens: choice.maxTokens,
     timeoutMs: choice.timeoutMs,
