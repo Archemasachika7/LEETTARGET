@@ -6,6 +6,7 @@ import { Tooltip } from "../../ui/index.js";
 import { cn } from "../../lib/cn.js";
 import type { Theme } from "../../lib/theme.js";
 import { TrackSwitcher } from "../study/TrackSwitcher.js";
+import { AssistantWidget } from "../assistant/AssistantWidget.js";
 
 /** The primary destinations, in the order of the product loop: see status
  * (Dashboard) → solve (Practice) → see where that's heading
@@ -144,6 +145,8 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
           ))}
         </div>
       </nav>
+
+      <AssistantWidget />
     </div>
   );
 }
