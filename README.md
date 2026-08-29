@@ -56,6 +56,11 @@ the same minus that one block. Fair warning: the key lives in the browser
 bundle, so do not ship this to real users as-is — the Groq call should move
 behind a Supabase edge function first.
 
+Optionally add `VITE_GEMINI_API_KEY` too (free at aistudio.google.com/apikey)
+as a fallback — it's only called if the Groq request comes back with nothing,
+which covers Groq rate limits or Groq moving a model off its free tier out
+from under you (this has happened before).
+
 ## Things I still want to do
 
 - PDF/DOCX upload on the ATS page instead of copy-paste
