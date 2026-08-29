@@ -6,6 +6,7 @@ import type {
   Profile,
   SolvedProblem,
   Target,
+  TargetFlagLevel,
   TargetSource,
   TargetStatus,
   TopicProblem,
@@ -158,16 +159,26 @@ export async function setTargetStatus(id: string, status: TargetStatus): Promise
   if (error) throw error;
 }
 
-/** Flags a target for review — or clears the flag — with an optional note
- * ("took AI help, couldn't solve it myself"). Independent of `status`: this
- * persists through the target later being marked done, since the point is
- * to remember which ones gave real trouble, not just which are unsolved. */
-export async function setTargetFlag(id: string, flagged: boolean, notes: string): Promise<void> {
+/** Sets a target's flag severity — or clears it (`"none"`) — with an
+ * optional note ("took AI help, couldn't solve it myself"). Independent of
+ * `status`: this persists through the target later being marked done, since
+ * the point is to remember which ones gave real trouble, not just which are
+ * unsolved. */
+export async function setTargetFlagLevel(id: string, flagLevel: TargetFlagLevel, notes: string): Promise<void> {
   const { error } = await requireClient()
     .from("targets")
-    .update({ flagged, notes: notes || null })
+    .update({ flag_level: flagLevel, notes: notes || null })
     .eq("id", id);
   if (error) throw error;
+}
+
+/** Sends a target back to "pending" so it reappears in the active list for
+ * another attempt — the "let me repeat this one" action on a flagged
+ * target, whether or not it was previously marked done. Leaves the flag and
+ * note untouched; clearing those is a separate, deliberate "okay, I've got
+ * this now" action (see `setTargetFlagLevel`). */
+export async function requeueTarget(id: string): Promise<void> {
+  await setTargetStatus(id, "pending");
 }
 
 export interface DetailedTarget extends Target {
@@ -938,7 +949,7 @@ function rowToTarget(row: any): Target {
     source: row.source,
     status: row.status,
     createdAt: row.created_at,
-    flagged: row.flagged ?? false,
+    flagLevel: row.flag_level ?? "none",
     notes: row.notes ?? undefined,
   };
 }
