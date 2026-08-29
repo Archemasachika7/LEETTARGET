@@ -1,12 +1,15 @@
 import type { AtsReport } from "./scorer";
-import { groqChat, groqEnabled } from "../groq.js";
+import { askLlm, llmEnabled } from "../llm.js";
 
-/** Kimi K2 on Groq's free tier. gemma2-9b-it, used here previously, was
- * pulled off the free tier — check console.groq.com/docs/models before
- * assuming this one is still current, Groq moves these around. */
-const MODEL = "moonshotai/kimi-k2-instruct";
+/** Kimi K2 on Groq's free tier, gemini-2.0-flash as the fallback if Groq
+ * has nothing (no key, rate-limited, or a model Groq quietly moved off
+ * the free tier — gemma2-9b-it, used here previously, was one). Check
+ * console.groq.com/docs/models and ai.google.dev/pricing before assuming
+ * either is still current — both providers move these around. */
+const GROQ_MODEL = "moonshotai/kimi-k2-instruct";
+const GEMINI_MODEL = "gemini-2.0-flash";
 
-export const secondOpinionEnabled = groqEnabled;
+export const secondOpinionEnabled = llmEnabled;
 
 /**
  * Optional second opinion from an LLM on Groq's free tier, on top of the
@@ -31,12 +34,12 @@ export async function getSecondOpinion(report: AtsReport, resumeText: string): P
     "Give exactly 5 fixes, one per line, each starting with '- '. Each fix must name the exact spot in the resume and what to write instead. No intro, no outro, only the 5 lines.",
   ].join("\n");
 
-  const content = await groqChat(
+  const content = await askLlm(
     [
       { role: "system", content: system },
       { role: "user", content: user },
     ],
-    { model: MODEL, temperature: 0.4, maxTokens: 450 }
+    { groqModel: GROQ_MODEL, geminiModel: GEMINI_MODEL, temperature: 0.4, maxTokens: 450 }
   );
   if (!content) return null;
 
