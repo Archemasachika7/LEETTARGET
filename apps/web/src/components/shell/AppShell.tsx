@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Target, Map, TrendingUp, User, Moon, Sun, LogOut } from "lucide-react";
+import { LayoutDashboard, Target, FileText, Map, TrendingUp, User, Moon, Sun, LogOut } from "lucide-react";
 import { Logo, LogoMark } from "../brand/Logo.js";
 import { Tooltip } from "../../ui/index.js";
 import { cn } from "../../lib/cn.js";
@@ -15,6 +15,7 @@ import { TrackSwitcher } from "../study/TrackSwitcher.js";
 export const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/practice", label: "Practice", icon: Target, end: false },
+  { to: "/ats", label: "ATS", icon: FileText, end: false },
   { to: "/roadmap", label: "Roadmap", icon: Map, end: false },
   { to: "/progress", label: "Progress", icon: TrendingUp, end: false },
   { to: "/profile", label: "Profile", icon: User, end: false },
