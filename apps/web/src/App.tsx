@@ -8,7 +8,8 @@ import { StudyDeskProvider } from "./lib/studyDesk.js";
 import { TimerProvider } from "./lib/timerProvider.js";
 import { AppShell } from "./components/shell/AppShell.js";
 import { Logo, LogoMark } from "./components/brand/Logo.js";
-import { ArrowUpRight, Check, CircleDot, GitBranch, ListChecks } from "lucide-react";
+import { HeroPreview } from "./components/brand/HeroPreview.js";
+import { ArrowUpRight } from "lucide-react";
 import { GithubIcon } from "./components/brand/GithubIcon.js";
 import { DashboardPage } from "./pages/DashboardPage.js";
 import { PracticePage } from "./pages/PracticePage.js";
@@ -178,41 +179,7 @@ function SignInScreen({ supabase }: { supabase: SupabaseClient }) {
 
             <div className="my-7 h-px bg-border" />
 
-            <div className="flex items-center justify-between">
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">A glimpse of the rhythm</p>
-              <span className="text-[11px] text-text-muted">Example view</span>
-            </div>
-
-            <div className="mt-4 border border-border bg-bg">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-text">
-                  <CircleDot className="h-4 w-4 text-brand" aria-hidden />
-                  Today&apos;s focus
-                </div>
-                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">Session 018</span>
-              </div>
-              <div className="space-y-4 p-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-success/40 bg-success/10 text-success">
-                    <Check className="h-3.5 w-3.5" strokeWidth={2.4} aria-hidden />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="truncate font-medium text-text">Arrays &amp; hashing</span>
-                      <span className="shrink-0 font-mono text-[11px] text-text-muted">2 / 3</span>
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden bg-surface">
-                      <div className="h-full w-2/3 bg-brand" />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 border-t border-border pt-4 text-sm">
-                  <ListChecks className="h-4 w-4 shrink-0 text-text-muted" aria-hidden />
-                  <span className="flex-1 text-text-secondary">Next: Sliding window patterns</span>
-                  <GitBranch className="h-4 w-4 shrink-0 text-text-muted" aria-hidden />
-                </div>
-              </div>
-            </div>
+            <HeroPreview />
 
             <p className="mt-4 text-center text-xs leading-5 text-text-muted">
               One place for your targets, your repetition, and your proof of work.
