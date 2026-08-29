@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Download, ListChecks, MessageCircleQuestion, Plus } from "lucide-react";
+import { Archive, Download, ListChecks, MessageCircleQuestion, Plus } from "lucide-react";
 import { useUserData } from "../lib/userData.js";
-import { deleteTarget, listDetailedTargets, type DetailedTarget } from "../lib/api.js";
+import { deleteTarget, listDetailedTargets, setTargetFlag, type DetailedTarget } from "../lib/api.js";
 import { downloadTargetsAsCsv } from "../lib/downloadCsv.js";
 import { getErrorMessage } from "../lib/errors.js";
 import { useStudyDesk } from "../lib/studyDesk.js";
@@ -32,6 +32,7 @@ export function PracticePage() {
   const [error, setError] = useState<string>();
   const [detailed, setDetailed] = useState<DetailedTarget[]>();
   const [showPlanner, setShowPlanner] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
 
   useEffect(() => {
     listDetailedTargets(userId)
@@ -49,8 +50,20 @@ export function PracticePage() {
     }
   }
 
-  const done = targets.filter((t) => t.status === "done").length;
+  const activeTargets = targets.filter((t) => t.status !== "done");
+  const archivedTargets = targets.filter((t) => t.status === "done");
+  const done = archivedTargets.length;
   const hasTargets = targets.length > 0;
+  const visibleTargets = showArchive ? archivedTargets : activeTargets;
+
+  async function handleFlagChange(id: string, flagged: boolean, notes: string) {
+    try {
+      await setTargetFlag(id, flagged, notes);
+      refresh();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  }
 
   // GATE and CAT are purposefully independent from LeetCode targets. Their
   // work is a concise recall desk, not a second attempt to force exam questions
@@ -122,10 +135,22 @@ export function PracticePage() {
           </div>
         )}
 
+        {hasTargets && (
+          <div className="flex gap-2">
+            <Button size="sm" variant={showArchive ? "ghost" : "secondary"} onClick={() => setShowArchive(false)}>
+              Active ({activeTargets.length})
+            </Button>
+            <Button size="sm" variant={showArchive ? "secondary" : "ghost"} onClick={() => setShowArchive(true)}>
+              <Archive className="h-3.5 w-3.5" aria-hidden />
+              Solved ({archivedTargets.length})
+            </Button>
+          </div>
+        )}
+
         {loading ? (
           <SkeletonRows rows={6} />
         ) : hasTargets ? (
-          <TargetsTable targets={targets} onRemove={handleRemove} />
+          <TargetsTable targets={visibleTargets} onRemove={handleRemove} onFlagChange={handleFlagChange} />
         ) : (
           <Card className="p-4">
             <p className="text-sm text-text-muted">Your targets will appear here.</p>
