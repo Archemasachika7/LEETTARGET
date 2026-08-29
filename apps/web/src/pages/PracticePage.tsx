@@ -9,6 +9,7 @@ import { AddTargetForm } from "../components/AddTargetForm.js";
 import { CsvUploader } from "../components/CsvUploader.js";
 import { TargetsTable } from "../components/TargetsTable.js";
 import { PracticeSession } from "../components/practice/PracticeSession.js";
+import { PracticeTimer } from "../components/practice/PracticeTimer.js";
 import { StuckDesk } from "../components/study/StuckDesk.js";
 import {
   Button,
@@ -63,6 +64,8 @@ export function PracticePage() {
       </header>
 
       {error && <ErrorNote>{error}</ErrorNote>}
+
+      <PracticeTimer />
 
       {loading || !detailed ? (
         <SkeletonRows rows={3} />

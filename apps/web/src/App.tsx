@@ -5,6 +5,7 @@ import { isSupabaseConfigured, supabase } from "./lib/supabaseClient.js";
 import { applyTheme, getInitialTheme, type Theme } from "./lib/theme.js";
 import { UserDataProvider } from "./lib/userData.js";
 import { StudyDeskProvider } from "./lib/studyDesk.js";
+import { TimerProvider } from "./lib/timerProvider.js";
 import { AppShell } from "./components/shell/AppShell.js";
 import { Logo, LogoMark } from "./components/brand/Logo.js";
 import { ArrowUpRight, Check, CircleDot, GitBranch, ListChecks } from "lucide-react";
@@ -78,19 +79,21 @@ function SignedInApp({ supabase }: { supabase: SupabaseClient }) {
       <BrowserRouter>
         <UserDataProvider userId={session.user.id}>
           <StudyDeskProvider userId={session.user.id}>
-            <AppShell theme={theme} onToggleTheme={toggleTheme} onSignOut={() => supabase.auth.signOut()}>
-              <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/practice" element={<PracticePage />} />
-                <Route path="/ats" element={<AtsPage />} />
-                <Route path="/roadmap" element={<RoadmapPage />} />
-                <Route path="/progress" element={<ProgressPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                {/* Anything unrecognised lands on the dashboard rather than a
-                 * dead end — there's no deep content worth a 404 page here. */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </AppShell>
+            <TimerProvider>
+              <AppShell theme={theme} onToggleTheme={toggleTheme} onSignOut={() => supabase.auth.signOut()}>
+                <Routes>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/practice" element={<PracticePage />} />
+                  <Route path="/ats" element={<AtsPage />} />
+                  <Route path="/roadmap" element={<RoadmapPage />} />
+                  <Route path="/progress" element={<ProgressPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  {/* Anything unrecognised lands on the dashboard rather than a
+                   * dead end — there's no deep content worth a 404 page here. */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </AppShell>
+            </TimerProvider>
           </StudyDeskProvider>
         </UserDataProvider>
       </BrowserRouter>

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Bot, Send, X } from "lucide-react";
-import type { UserGoals } from "@leettarget/shared";
+import type { LeaderboardEntry, UserGoals } from "@leettarget/shared";
 import { useUserData } from "../../lib/userData.js";
 import { useStudyDesk } from "../../lib/studyDesk.js";
 import { useTopics } from "../../lib/useTopics.js";
-import { getUserGoals } from "../../lib/api.js";
+import { getUserGoals, listLeaderboard } from "../../lib/api.js";
 import { buildContextSummary } from "../../lib/assistant/context.js";
 import { askAssistant, assistantEnabled, type ChatTurn } from "../../lib/assistant/chat.js";
 import { splineSceneUrl, SplineAvatar } from "./SplineAvatar.js";
@@ -12,17 +12,19 @@ import { Button, Card } from "../../ui/index.js";
 import { cn } from "../../lib/cn.js";
 
 const GREETING =
-  "Ask me about your streak, your targets, or where you're stuck. I only know what's in your own LeetTarget data.";
+  "Ask me about your streak, your targets, where you're stuck, or where you stand on the leaderboard. I only know what's in LeetTarget's own data — your private stats, plus the public leaderboard everyone can already see.";
 
 /** A floating chat widget, present on every signed-in page, that answers
- * questions about the reader's own progress — never anyone else's, and
- * never a number LeetTarget doesn't actually track. See
- * lib/assistant/context.ts for exactly what data it's given. */
+ * questions about the reader's own progress and the public leaderboard —
+ * never another user's private data, and never a number LeetTarget doesn't
+ * actually track. See lib/assistant/context.ts for exactly what data it's
+ * given. */
 export function AssistantWidget() {
   const { userId, targets, solved, refreshTick } = useUserData();
   const { mode, stuckItems } = useStudyDesk();
   const { focus } = useTopics(userId, refreshTick);
   const [goals, setGoals] = useState<UserGoals>();
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [open, setOpen] = useState(false);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [input, setInput] = useState("");
@@ -35,6 +37,9 @@ export function AssistantWidget() {
     if (mode !== "leetcode") return;
     getUserGoals(userId)
       .then(setGoals)
+      .catch(() => {});
+    listLeaderboard()
+      .then(setLeaderboard)
       .catch(() => {});
   }, [userId, mode, refreshTick]);
 
@@ -49,7 +54,7 @@ export function AssistantWidget() {
     setTurns(next);
     setInput("");
     setBusy(true);
-    const summary = buildContextSummary({ track: mode, targets, solved, goals, focusTopics: focus, stuckItems });
+    const summary = buildContextSummary({ track: mode, targets, solved, goals, focusTopics: focus, stuckItems, userId, leaderboard });
     const reply = await askAssistant(next, summary);
     setTurns((cur) => [
       ...cur,
