@@ -53,6 +53,9 @@ export function DashboardPage() {
   const { focus } = useTopics(userId, refreshTick);
 
   const pendingCount = targets.filter((t) => t.status === "pending").length;
+  // Solved targets archive out of this preview once done — the point of
+  // "recent" here is what's still ahead, not a growing list of checkmarks.
+  const activeTargets = targets.filter((t) => t.status !== "done");
 
   // Keep the original LeetCode dashboard exactly as its own progression system.
   // The exam modes intentionally have their own lighter recall workspace.
@@ -123,8 +126,20 @@ export function DashboardPage() {
               </Link>
             }
           />
+        ) : activeTargets.length === 0 ? (
+          <EmptyState
+            title="Everything's solved."
+            description="Every current target is done — solved ones archive out of this preview. Add more from the practice page."
+            action={
+              <Link to="/practice">
+                <Button variant="primary" size="sm">
+                  Add targets
+                </Button>
+              </Link>
+            }
+          />
         ) : (
-          <TargetsTable targets={targets.slice(0, 8)} />
+          <TargetsTable targets={activeTargets.slice(0, 8)} />
         )}
       </section>
 

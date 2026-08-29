@@ -27,6 +27,11 @@ export interface Target {
   source: TargetSource;
   status: TargetStatus;
   createdAt: string;
+  /** Marked for review — "I needed help on this one" — independent of
+   * `status` and deliberately not cleared when the target is later solved,
+   * so it stays visible as a "revisit this" note even after the checkmark. */
+  flagged: boolean;
+  notes?: string;
 }
 
 /** A GitHub repo the user commits LeetCode solutions to (LeetHub-style). */

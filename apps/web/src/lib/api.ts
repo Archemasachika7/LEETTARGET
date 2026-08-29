@@ -158,6 +158,18 @@ export async function setTargetStatus(id: string, status: TargetStatus): Promise
   if (error) throw error;
 }
 
+/** Flags a target for review — or clears the flag — with an optional note
+ * ("took AI help, couldn't solve it myself"). Independent of `status`: this
+ * persists through the target later being marked done, since the point is
+ * to remember which ones gave real trouble, not just which are unsolved. */
+export async function setTargetFlag(id: string, flagged: boolean, notes: string): Promise<void> {
+  const { error } = await requireClient()
+    .from("targets")
+    .update({ flagged, notes: notes || null })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export interface DetailedTarget extends Target {
   difficulty: Problem["difficulty"];
   topics: string[];
@@ -926,6 +938,8 @@ function rowToTarget(row: any): Target {
     source: row.source,
     status: row.status,
     createdAt: row.created_at,
+    flagged: row.flagged ?? false,
+    notes: row.notes ?? undefined,
   };
 }
 
