@@ -1,27 +1,27 @@
 import { useState } from "react";
 import type { Target, TargetFlagLevel } from "@leettarget/shared";
-import { Check, ExternalLink, Flag, RotateCcw, X } from "lucide-react";
+import { Check, Clock3, ExternalLink, RotateCcw, Wrench, X } from "lucide-react";
 import { Badge, Button, Card, Textarea } from "../ui/index.js";
 import { cn } from "../lib/cn.js";
 
 interface Props {
   targets: Target[];
   onRemove?: (id: string) => void;
-  /** Omit to render read-only — flagging is only wired up where the caller
-   * wants it editable (the full target list), not every place a
+  /** Omit to render read-only — categorizing is only wired up where the
+   * caller wants it editable (the full target list), not every place a
    * `TargetsTable` shows up (e.g. the dashboard's recent-targets preview). */
-  onFlagChange?: (id: string, flagLevel: TargetFlagLevel, notes: string) => void | Promise<void>;
-  /** Sends a flagged target back to "pending" for another attempt. Only
-   * meaningful alongside `onFlagChange`. */
+  onCategorize?: (id: string, category: TargetFlagLevel, notes: string) => void | Promise<void>;
+  /** Sends a categorized target back to "pending" for another attempt. Only
+   * meaningful alongside `onCategorize`. */
   onRepeat?: (id: string) => void | Promise<void>;
 }
 
-const LEVEL_LABEL: Record<Exclude<TargetFlagLevel, "none">, string> = {
-  yellow: "Yellow flag",
-  red: "Red flag",
+const CATEGORY_LABEL: Record<Exclude<TargetFlagLevel, "none">, string> = {
+  yellow: "See later",
+  red: "Do later",
 };
 
-const LEVEL_TONE: Record<Exclude<TargetFlagLevel, "none">, "warning" | "danger"> = {
+const CATEGORY_TONE: Record<Exclude<TargetFlagLevel, "none">, "warning" | "danger"> = {
   yellow: "warning",
   red: "danger",
 };
@@ -30,13 +30,14 @@ const LEVEL_TONE: Record<Exclude<TargetFlagLevel, "none">, "warning" | "danger">
  * table into unreadable slivers — the title and status are what matter on a
  * phone, and the source label moves under the title.
  *
- * A flagged target ("took AI help, couldn't solve it myself") gets a second
- * line under its title with the note laid out beside the flag marker, not
- * folded into a tooltip — the point is to actually see it again later, not
- * just know it's there. Two severities only — yellow for "needed a hand",
- * red for "seriously stuck" — deliberately no green tier, since green
- * already means "done" via status. */
-export function TargetsTable({ targets, onRemove, onFlagChange, onRepeat }: Props) {
+ * A categorized target ("took AI help, couldn't solve it myself") gets a
+ * second line under its title with the note laid out beside the category
+ * badge, not folded into a tooltip — the point is to actually see it again
+ * later, not just know it's there. Two categories only — "See later" for
+ * something worth a second look, "Do later" for something that needs a real
+ * re-attempt — sorted into their own tabs by the caller, alongside (not
+ * instead of) the plain done/pending status. */
+export function TargetsTable({ targets, onRemove, onCategorize, onRepeat }: Props) {
   if (targets.length === 0) {
     return <p className="text-sm text-text-muted">No targets yet.</p>;
   }
@@ -45,7 +46,7 @@ export function TargetsTable({ targets, onRemove, onFlagChange, onRepeat }: Prop
     <Card className="divide-y divide-border overflow-hidden">
       <ul>
         {targets.map((target) => (
-          <TargetRow key={target.id} target={target} onRemove={onRemove} onFlagChange={onFlagChange} onRepeat={onRepeat} />
+          <TargetRow key={target.id} target={target} onRemove={onRemove} onCategorize={onCategorize} onRepeat={onRepeat} />
         ))}
       </ul>
     </Card>
@@ -55,12 +56,12 @@ export function TargetsTable({ targets, onRemove, onFlagChange, onRepeat }: Prop
 function TargetRow({
   target,
   onRemove,
-  onFlagChange,
+  onCategorize,
   onRepeat,
 }: {
   target: Target;
   onRemove?: (id: string) => void;
-  onFlagChange?: (id: string, flagLevel: TargetFlagLevel, notes: string) => void | Promise<void>;
+  onCategorize?: (id: string, category: TargetFlagLevel, notes: string) => void | Promise<void>;
   onRepeat?: (id: string) => void | Promise<void>;
 }) {
   const [editing, setEditing] = useState<TargetFlagLevel | null>(null);
@@ -68,30 +69,30 @@ function TargetRow({
   const [busy, setBusy] = useState(false);
 
   const done = target.status === "done";
-  const flagged = target.flagLevel !== "none";
+  const categorized = target.flagLevel !== "none";
   const title = target.customTitle ?? target.customUrl ?? target.problemId ?? "Untitled";
 
-  function startEditing() {
+  function pick(category: TargetFlagLevel) {
     setDraft(target.notes ?? "");
-    setEditing(target.flagLevel === "none" ? "yellow" : target.flagLevel);
+    setEditing(category);
   }
 
   async function save() {
-    if (!onFlagChange || !editing) return;
+    if (!onCategorize || !editing) return;
     setBusy(true);
     try {
-      await onFlagChange(target.id, editing, draft.trim());
+      await onCategorize(target.id, editing, draft.trim());
       setEditing(null);
     } finally {
       setBusy(false);
     }
   }
 
-  async function clearFlag() {
-    if (!onFlagChange) return;
+  async function clearCategory() {
+    if (!onCategorize) return;
     setBusy(true);
     try {
-      await onFlagChange(target.id, "none", "");
+      await onCategorize(target.id, "none", "");
       setDraft("");
       setEditing(null);
     } finally {
@@ -151,21 +152,35 @@ function TargetRow({
 
         <Badge tone={done ? "success" : "neutral"}>{done ? "Done" : "Pending"}</Badge>
 
-        {onFlagChange && (
+        {onCategorize && !categorized && !editing && (
+          <div className="flex shrink-0 gap-1.5">
+            <button
+              onClick={() => pick("yellow")}
+              className="flex items-center gap-1 border border-border px-2 py-1 text-[11px] font-medium text-text-muted transition-colors duration-fast hover:border-warning/40 hover:text-warning"
+            >
+              <Clock3 className="h-3 w-3" aria-hidden />
+              See later
+            </button>
+            <button
+              onClick={() => pick("red")}
+              className="flex items-center gap-1 border border-border px-2 py-1 text-[11px] font-medium text-text-muted transition-colors duration-fast hover:border-danger/40 hover:text-danger"
+            >
+              <Wrench className="h-3 w-3" aria-hidden />
+              Do later
+            </button>
+          </div>
+        )}
+
+        {onCategorize && categorized && (
           <button
-            onClick={() => (editing ? setEditing(null) : startEditing())}
-            aria-label={flagged ? "Edit flag" : "Flag for review"}
-            aria-pressed={flagged}
+            onClick={() => (editing ? setEditing(null) : pick(target.flagLevel))}
+            aria-label="Edit category"
             className={cn(
               "rounded p-1.5 transition-colors duration-fast",
-              target.flagLevel === "red"
-                ? "text-danger hover:bg-danger/10"
-                : target.flagLevel === "yellow"
-                  ? "text-warning hover:bg-warning/10"
-                  : "text-text-muted hover:bg-surface hover:text-warning"
+              target.flagLevel === "red" ? "text-danger hover:bg-danger/10" : "text-warning hover:bg-warning/10"
             )}
           >
-            <Flag className="h-3.5 w-3.5" aria-hidden fill={flagged ? "currentColor" : "none"} />
+            {target.flagLevel === "red" ? <Wrench className="h-3.5 w-3.5" aria-hidden /> : <Clock3 className="h-3.5 w-3.5" aria-hidden />}
           </button>
         )}
 
@@ -180,18 +195,17 @@ function TargetRow({
         )}
       </div>
 
-      {flagged && !editing && (
+      {categorized && !editing && (
         <div className="mt-2 flex flex-col gap-2 border-t border-border pt-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4">
-            <Badge tone={LEVEL_TONE[target.flagLevel as Exclude<TargetFlagLevel, "none">]} className="shrink-0">
-              <Flag className="h-3 w-3" fill="currentColor" aria-hidden />
-              {LEVEL_LABEL[target.flagLevel as Exclude<TargetFlagLevel, "none">]}
+            <Badge tone={CATEGORY_TONE[target.flagLevel as Exclude<TargetFlagLevel, "none">]} className="shrink-0">
+              {CATEGORY_LABEL[target.flagLevel as Exclude<TargetFlagLevel, "none">]}
             </Badge>
             <p className="min-w-0 flex-1 text-[13px] leading-5 text-text-secondary">
               {target.notes || "No note added."}
             </p>
           </div>
-          {onFlagChange && (
+          {onCategorize && (
             <div className="flex shrink-0 gap-2">
               {onRepeat && (
                 <Button size="sm" variant="ghost" onClick={repeat} loading={busy} loadingText="Requeuing…">
@@ -199,7 +213,7 @@ function TargetRow({
                   Repeat
                 </Button>
               )}
-              <Button size="sm" variant="secondary" onClick={clearFlag} loading={busy} loadingText="Clearing…">
+              <Button size="sm" variant="secondary" onClick={clearCategory} loading={busy} loadingText="Clearing…">
                 Okay
               </Button>
             </div>
@@ -218,8 +232,8 @@ function TargetRow({
                 editing === "yellow" ? "border-warning/40 bg-warning/10 text-warning" : "border-border text-text-muted hover:text-text"
               )}
             >
-              <Flag className="h-3 w-3" fill={editing === "yellow" ? "currentColor" : "none"} aria-hidden />
-              Yellow
+              <Clock3 className="h-3 w-3" aria-hidden />
+              See later
             </button>
             <button
               type="button"
@@ -229,8 +243,8 @@ function TargetRow({
                 editing === "red" ? "border-danger/40 bg-danger/10 text-danger" : "border-border text-text-muted hover:text-text"
               )}
             >
-              <Flag className="h-3 w-3" fill={editing === "red" ? "currentColor" : "none"} aria-hidden />
-              Red
+              <Wrench className="h-3 w-3" aria-hidden />
+              Do later
             </button>
           </div>
           <Textarea
@@ -240,8 +254,8 @@ function TargetRow({
             placeholder="What happened? e.g. took AI help, couldn't fully solve it myself."
           />
           <div className="flex justify-end gap-2">
-            {flagged && (
-              <Button size="sm" variant="ghost" onClick={clearFlag} loading={busy} loadingText="Clearing…">
+            {categorized && (
+              <Button size="sm" variant="ghost" onClick={clearCategory} loading={busy} loadingText="Clearing…">
                 Okay, clear it
               </Button>
             )}

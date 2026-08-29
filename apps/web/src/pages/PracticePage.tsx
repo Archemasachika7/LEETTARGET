@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Archive, Download, ListChecks, MessageCircleQuestion, Plus } from "lucide-react";
+import { Archive, Clock3, Download, ListChecks, MessageCircleQuestion, Plus, Wrench } from "lucide-react";
 import type { TargetFlagLevel } from "@leettarget/shared";
 import { useUserData } from "../lib/userData.js";
 import { deleteTarget, listDetailedTargets, requeueTarget, setTargetFlagLevel, type DetailedTarget } from "../lib/api.js";
@@ -33,7 +33,7 @@ export function PracticePage() {
   const [error, setError] = useState<string>();
   const [detailed, setDetailed] = useState<DetailedTarget[]>();
   const [showPlanner, setShowPlanner] = useState(false);
-  const [showArchive, setShowArchive] = useState(false);
+  const [tab, setTab] = useState<"active" | "yellow" | "red" | "solved">("active");
 
   useEffect(() => {
     listDetailedTargets(userId)
@@ -51,15 +51,20 @@ export function PracticePage() {
     }
   }
 
+  // These aren't mutually exclusive — a target keeps its plain done/pending
+  // status regardless of category, so a solved-and-categorized target shows
+  // up under both Solved and its category tab, not one or the other.
   const activeTargets = targets.filter((t) => t.status !== "done");
-  const archivedTargets = targets.filter((t) => t.status === "done");
-  const done = archivedTargets.length;
+  const solvedTargets = targets.filter((t) => t.status === "done");
+  const seeLaterTargets = targets.filter((t) => t.flagLevel === "yellow");
+  const doLaterTargets = targets.filter((t) => t.flagLevel === "red");
+  const done = solvedTargets.length;
   const hasTargets = targets.length > 0;
-  const visibleTargets = showArchive ? archivedTargets : activeTargets;
+  const visibleTargets = { active: activeTargets, yellow: seeLaterTargets, red: doLaterTargets, solved: solvedTargets }[tab];
 
-  async function handleFlagChange(id: string, flagLevel: TargetFlagLevel, notes: string) {
+  async function handleCategorize(id: string, category: TargetFlagLevel, notes: string) {
     try {
-      await setTargetFlagLevel(id, flagLevel, notes);
+      await setTargetFlagLevel(id, category, notes);
       refresh();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -69,7 +74,7 @@ export function PracticePage() {
   async function handleRepeat(id: string) {
     try {
       await requeueTarget(id);
-      setShowArchive(false);
+      setTab("active");
       refresh();
       toast("Back in your active list");
     } catch (err) {
@@ -148,13 +153,21 @@ export function PracticePage() {
         )}
 
         {hasTargets && (
-          <div className="flex gap-2">
-            <Button size="sm" variant={showArchive ? "ghost" : "secondary"} onClick={() => setShowArchive(false)}>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant={tab === "active" ? "secondary" : "ghost"} onClick={() => setTab("active")}>
               Active ({activeTargets.length})
             </Button>
-            <Button size="sm" variant={showArchive ? "secondary" : "ghost"} onClick={() => setShowArchive(true)}>
+            <Button size="sm" variant={tab === "yellow" ? "secondary" : "ghost"} onClick={() => setTab("yellow")}>
+              <Clock3 className="h-3.5 w-3.5" aria-hidden />
+              See later ({seeLaterTargets.length})
+            </Button>
+            <Button size="sm" variant={tab === "red" ? "secondary" : "ghost"} onClick={() => setTab("red")}>
+              <Wrench className="h-3.5 w-3.5" aria-hidden />
+              Do later ({doLaterTargets.length})
+            </Button>
+            <Button size="sm" variant={tab === "solved" ? "secondary" : "ghost"} onClick={() => setTab("solved")}>
               <Archive className="h-3.5 w-3.5" aria-hidden />
-              Solved ({archivedTargets.length})
+              Solved ({solvedTargets.length})
             </Button>
           </div>
         )}
@@ -162,7 +175,7 @@ export function PracticePage() {
         {loading ? (
           <SkeletonRows rows={6} />
         ) : hasTargets ? (
-          <TargetsTable targets={visibleTargets} onRemove={handleRemove} onFlagChange={handleFlagChange} onRepeat={handleRepeat} />
+          <TargetsTable targets={visibleTargets} onRemove={handleRemove} onCategorize={handleCategorize} onRepeat={handleRepeat} />
         ) : (
           <Card className="p-4">
             <p className="text-sm text-text-muted">Your targets will appear here.</p>
