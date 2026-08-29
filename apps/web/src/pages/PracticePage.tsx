@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Archive, Download, ListChecks, MessageCircleQuestion, Plus } from "lucide-react";
+import type { TargetFlagLevel } from "@leettarget/shared";
 import { useUserData } from "../lib/userData.js";
-import { deleteTarget, listDetailedTargets, setTargetFlag, type DetailedTarget } from "../lib/api.js";
+import { deleteTarget, listDetailedTargets, requeueTarget, setTargetFlagLevel, type DetailedTarget } from "../lib/api.js";
 import { downloadTargetsAsCsv } from "../lib/downloadCsv.js";
 import { getErrorMessage } from "../lib/errors.js";
 import { useStudyDesk } from "../lib/studyDesk.js";
@@ -56,10 +57,21 @@ export function PracticePage() {
   const hasTargets = targets.length > 0;
   const visibleTargets = showArchive ? archivedTargets : activeTargets;
 
-  async function handleFlagChange(id: string, flagged: boolean, notes: string) {
+  async function handleFlagChange(id: string, flagLevel: TargetFlagLevel, notes: string) {
     try {
-      await setTargetFlag(id, flagged, notes);
+      await setTargetFlagLevel(id, flagLevel, notes);
       refresh();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  }
+
+  async function handleRepeat(id: string) {
+    try {
+      await requeueTarget(id);
+      setShowArchive(false);
+      refresh();
+      toast("Back in your active list");
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -150,7 +162,7 @@ export function PracticePage() {
         {loading ? (
           <SkeletonRows rows={6} />
         ) : hasTargets ? (
-          <TargetsTable targets={visibleTargets} onRemove={handleRemove} onFlagChange={handleFlagChange} />
+          <TargetsTable targets={visibleTargets} onRemove={handleRemove} onFlagChange={handleFlagChange} onRepeat={handleRepeat} />
         ) : (
           <Card className="p-4">
             <p className="text-sm text-text-muted">Your targets will appear here.</p>

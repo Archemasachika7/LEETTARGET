@@ -27,12 +27,16 @@ export interface Target {
   source: TargetSource;
   status: TargetStatus;
   createdAt: string;
-  /** Marked for review — "I needed help on this one" — independent of
-   * `status` and deliberately not cleared when the target is later solved,
-   * so it stays visible as a "revisit this" note even after the checkmark. */
-  flagged: boolean;
+  /** Severity of "this one gave me trouble" — independent of `status` and
+   * deliberately not cleared when the target is later solved, so it stays
+   * visible as a "revisit this" marker even after the checkmark. No green
+   * level: green already means "done" via `status`, so a flag only ever
+   * escalates (yellow → red), it never has an "all good" tier of its own. */
+  flagLevel: TargetFlagLevel;
   notes?: string;
 }
+
+export type TargetFlagLevel = "none" | "yellow" | "red";
 
 /** A GitHub repo the user commits LeetCode solutions to (LeetHub-style). */
 export interface GithubLink {
