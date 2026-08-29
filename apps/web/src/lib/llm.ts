@@ -7,17 +7,17 @@ export type LlmMessage = GroqMessage;
  * Both providers move model IDs around without much notice — Groq shifted
  * several models to Enterprise-only in Aug 2026, and Google retired
  * gemini-2.0-flash for new keys in Jun 2026, both breaking this app in
- * production. groq/compound was confirmed live against a real account's
- * GET /openai/v1/models response — not documentation, not a blog post,
- * an actual API key's actual model list — after two prior guesses
- * (moonshotai/kimi-k2-instruct, then its -0905 variant) both 404'd
- * despite being repeated across several sources as "currently free".
- * Defined once here rather than per call site, since the fix for the
- * next rename is the same one-line edit wherever it's used. If this
+ * production. qwen/qwen3.8-27b was confirmed live against a real
+ * account's GET /openai/v1/models response — not documentation, not a
+ * blog post, an actual API key's actual model list — after two earlier
+ * guesses (moonshotai/kimi-k2-instruct, then its -0905 variant) both
+ * 404'd despite being repeated across several sources as "currently
+ * free". Defined once here rather than per call site, since the fix for
+ * the next rename is the same one-line edit wherever it's used. If this
  * breaks again, don't guess — hit GET /openai/v1/models with a real key
  * and read the actual list back.
  */
-export const DEFAULT_GROQ_MODEL = "groq/compound";
+export const DEFAULT_GROQ_MODEL = "qwen/qwen3.8-27b";
 export const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 
 export function llmEnabled(): boolean {
