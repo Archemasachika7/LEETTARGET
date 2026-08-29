@@ -1,9 +1,10 @@
 import { groqChat, groqEnabled } from "../groq.js";
 
-/** Llama 3.3 70B on Groq's free tier — the strongest general chat model
- * available without a paid key, and a step up from the 9B model the ATS
- * page uses for its narrower, single-shot suggestion task. */
-const MODEL = "llama-3.3-70b-versatile";
+/** Kimi K2 on Groq's free tier. Groq periodically moves models between its
+ * free and enterprise-only tiers without much notice (Llama 3.1/3.3 both
+ * moved to Contact-Sales-only in Aug 2026) — check console.groq.com/docs/models
+ * before assuming this is still current. */
+const MODEL = "moonshotai/kimi-k2-instruct";
 
 export const assistantEnabled = groqEnabled;
 

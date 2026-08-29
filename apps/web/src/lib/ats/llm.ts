@@ -1,16 +1,19 @@
 import type { AtsReport } from "./scorer";
 import { groqChat, groqEnabled } from "../groq.js";
 
-const MODEL = "gemma2-9b-it";
+/** Kimi K2 on Groq's free tier. gemma2-9b-it, used here previously, was
+ * pulled off the free tier — check console.groq.com/docs/models before
+ * assuming this one is still current, Groq moves these around. */
+const MODEL = "moonshotai/kimi-k2-instruct";
 
-export const gemmaEnabled = groqEnabled;
+export const secondOpinionEnabled = groqEnabled;
 
 /**
- * Optional second opinion from Gemma 2 9B on Groq's free tier.
- * Returns null when no key is configured or anything fails — the
- * rule-based report is always the source of truth.
+ * Optional second opinion from an LLM on Groq's free tier, on top of the
+ * rule-based score. Returns null when no key is configured or anything
+ * fails — the rule-based report is always the source of truth.
  */
-export async function getGemmaSuggestions(report: AtsReport, resumeText: string): Promise<string[] | null> {
+export async function getSecondOpinion(report: AtsReport, resumeText: string): Promise<string[] | null> {
   const system = [
     "You are a placement-cell senior at an Indian engineering college who has reviewed over 500 resumes.",
     "You write like a person, not an AI: short sentences, specific, a little blunt.",
