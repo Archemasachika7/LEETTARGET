@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Download, Trophy, UserCircle } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw, Trophy, UserCircle } from "lucide-react";
 import type { LeaderboardEntry, Target } from "@leettarget/shared";
 import { getErrorMessage } from "../lib/errors.js";
-import { listLeaderboard, listTargets } from "../lib/api.js";
+import { getSyncState, listLeaderboard, listTargets, syncAllProfiles } from "../lib/api.js";
 import { downloadTargetsAsCsv } from "../lib/downloadCsv.js";
+import { syncAllProfilesUrl } from "../lib/leetcodeConfig.js";
 import { DifficultyBreakdown } from "./DifficultyBreakdown.js";
 import { TargetsTable } from "./TargetsTable.js";
-import { Badge, Button, Card, EmptyState, ErrorNote, ProgressBar, SectionHeader, SkeletonRows } from "../ui/index.js";
+import { Badge, Button, Card, EmptyState, ErrorNote, ProgressBar, SectionHeader, SkeletonRows, useToast } from "../ui/index.js";
 import { cn } from "../lib/cn.js";
 
 interface Props {
@@ -15,6 +16,61 @@ interface Props {
 
 function displayNameFor(entry: LeaderboardEntry): string {
   return entry.displayName || entry.leetcodeUsername || "Anonymous";
+}
+
+function timeAgo(iso: string): string {
+  const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (seconds < 60) return "just now";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
+}
+
+/** Public "Sync everyone" — an on-demand run of the same per-profile
+ * LeetCode import the 9pm IST cron job does, but for every enrolled user at
+ * once, callable by anyone. Hides itself when the edge function isn't
+ * deployed, same as the per-user "Import from LeetCode" button. */
+function SyncAllButton() {
+  const [lastSyncedAt, setLastSyncedAt] = useState<string>();
+  const [syncing, setSyncing] = useState(false);
+  const toast = useToast();
+
+  useEffect(() => {
+    getSyncState()
+      .then((s) => setLastSyncedAt(s.lastSyncedAt))
+      .catch(() => {}); // non-critical — just skips the "last synced" label
+  }, []);
+
+  if (!syncAllProfilesUrl) return null;
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      const result = await syncAllProfiles(syncAllProfilesUrl!);
+      setLastSyncedAt(result.lastSyncedAt);
+      toast(
+        result.skipped
+          ? "Already synced recently — try again in a few minutes."
+          : result.lastSummary ?? "Sync complete."
+      );
+    } catch (err) {
+      toast(getErrorMessage(err));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      {lastSyncedAt && <span className="text-[12px] text-text-muted">Synced {timeAgo(lastSyncedAt)}</span>}
+      <Button size="sm" onClick={handleSync} loading={syncing} loadingText="Syncing…">
+        <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+        Sync everyone
+      </Button>
+    </div>
+  );
 }
 
 /** Everyone with at least one target or solve, ranked by solved count.
@@ -44,19 +100,28 @@ export function Leaderboard({ currentUserId }: Props) {
 
   if (entries.length === 0) {
     return (
-      <EmptyState
-        icon={<Trophy className="h-6 w-6" aria-hidden />}
-        title="Nobody's on the board yet."
-        description="The leaderboard fills in as people add targets and record solves."
-      />
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-end">
+          <SyncAllButton />
+        </div>
+        <EmptyState
+          icon={<Trophy className="h-6 w-6" aria-hidden />}
+          title="Nobody's on the board yet."
+          description="The leaderboard fills in as people add targets and record solves."
+        />
+      </div>
     );
   }
 
   const leader = entries[0]?.solvedCount ?? 0;
 
   return (
-    <Card className="overflow-hidden">
-      <ul className="divide-y divide-border">
+    <div className="flex flex-col gap-3">
+      <div className="flex justify-end">
+        <SyncAllButton />
+      </div>
+      <Card className="overflow-hidden">
+        <ul className="divide-y divide-border">
         {entries.map((entry, i) => {
           const isSelf = entry.userId === currentUserId;
           return (
@@ -105,8 +170,9 @@ export function Leaderboard({ currentUserId }: Props) {
             </li>
           );
         })}
-      </ul>
-    </Card>
+        </ul>
+      </Card>
+    </div>
   );
 }
 

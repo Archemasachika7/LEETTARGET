@@ -84,6 +84,28 @@ To confirm it's running: `select * from cron.job_run_details order by start_time
 after the next scheduled time passes. To stop it:
 `select cron.unschedule('daily-leetcode-import');`.
 
+## 6. Public "Sync everyone" button (optional)
+
+The Leaderboard's "Sync everyone" button runs the same per-profile import
+as the daily cron job above, but on demand and for every enrolled user at
+once, callable by anyone signed in — not gated by a secret the way
+`daily-import` is, since it's meant to be reachable straight from the
+browser.
+
+```bash
+supabase functions deploy sync-all-profiles
+```
+
+Then set `VITE_SYNC_ALL_PROFILES_URL` in `apps/web/.env.local` to the
+deployed function's URL (see `apps/web/.env.example`) — the button hides
+itself until that's set, same as `VITE_LEETCODE_PROXY_URL`.
+
+Because this one has no secret gating it, a shared `sync_state` row
+(migration `0011_sync_state.sql`) enforces a 15-minute cooldown between
+runs — a burst of clicks from different users within that window all get
+back the same cached result instead of each kicking off a fresh full
+import against LeetCode's API.
+
 ## Notes
 
 - `problems` is a shared catalog table (RLS allows any authenticated user
@@ -96,11 +118,14 @@ after the next scheduled time passes. To stop it:
   the same RLS policies as the web app, and self-refreshes that token
   (`apps/extension/src/lib/supabaseAuth.ts`) rather than needing it
   re-copied after Supabase's ~1hr expiry.
-- `daily-import` is the one exception to "everything goes through RLS as
-  the user" — it uses the service role key (auto-injected, never stored in
-  this repo) to iterate every `leetcode_profiles` row and write on each
-  user's behalf. That's a deliberate, narrow bypass for a trusted server
-  job with known user_ids, not a general pattern to extend elsewhere.
+- `daily-import` and `sync-all-profiles` are the two exceptions to
+  "everything goes through RLS as the user" — both use the service role key
+  (auto-injected, never stored in this repo) to iterate every
+  `leetcode_profiles` row and write on each user's behalf. That's a
+  deliberate, narrow bypass for a trusted server job with known user_ids,
+  not a general pattern to extend elsewhere. `sync-all-profiles` also
+  writes the shared `sync_state` row (its cooldown bookkeeping) — clients
+  can only read that table, never write it.
 
 ## Optional GATE/CAT desk persistence
 
