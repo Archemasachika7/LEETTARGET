@@ -1,5 +1,5 @@
 import { summariseStreaks } from "@leettarget/shared";
-import type { SolvedProblem, Target, UserGoals, TopicMastery } from "@leettarget/shared";
+import type { LeaderboardEntry, SolvedProblem, Target, UserGoals, TopicMastery } from "@leettarget/shared";
 import type { StuckItem, StudyTrack } from "../studyDesk.js";
 
 export interface AssistantContext {
@@ -9,6 +9,13 @@ export interface AssistantContext {
   goals?: UserGoals;
   focusTopics: TopicMastery[];
   stuckItems: StuckItem[];
+  userId: string;
+  /** The public leaderboard — every signed-in user with at least one target
+   * or solve is already visible on it in the app itself (migration
+   * 0004_leaderboard.sql opens SELECT to any authenticated user), so
+   * handing it to the assistant isn't exposing anything the reader
+   * couldn't already see on the Progress page's leaderboard tab. */
+  leaderboard: LeaderboardEntry[];
 }
 
 /** Renders the reader's own data into a compact block the model reads as
@@ -16,7 +23,7 @@ export interface AssistantContext {
  * nothing here is a number the model could then misremember or embellish,
  * and tracks with no data yet say so instead of being padded out. */
 export function buildContextSummary(ctx: AssistantContext): string {
-  const { track, targets, solved, goals, focusTopics, stuckItems } = ctx;
+  const { track, targets, solved, goals, focusTopics, stuckItems, userId, leaderboard } = ctx;
   const lines: string[] = [`Active track: ${track}.`];
 
   if (track === "leetcode") {
@@ -39,6 +46,21 @@ export function buildContextSummary(ctx: AssistantContext): string {
     lines.push(
       "Not tracked and never invent a value for: accuracy, attempt counts, success rate, solve time — LeetCode's public API only reports accepted submissions."
     );
+
+    if (leaderboard.length > 0) {
+      const rank = leaderboard.findIndex((e) => e.userId === userId) + 1;
+      lines.push(
+        rank > 0
+          ? `Leaderboard rank: ${rank} of ${leaderboard.length}, by problems solved.`
+          : `Leaderboard: ${leaderboard.length} people on it; not ranked yet (no targets or solves recorded).`
+      );
+      const top = leaderboard
+        .slice(0, 8)
+        .map((e, i) => `${i + 1}. ${e.displayName ?? "unnamed"}${e.userId === userId ? " (you)" : ""} — ${e.solvedCount} solved`);
+      lines.push(`Leaderboard, top ${top.length}: ${top.join("; ")}.`);
+    } else {
+      lines.push("Leaderboard: empty — no one has any targets or solves recorded yet.");
+    }
   } else {
     const stuck = stuckItems.filter((i) => i.status === "stuck").length;
     const revisit = stuckItems.filter((i) => i.status === "revisit").length;
