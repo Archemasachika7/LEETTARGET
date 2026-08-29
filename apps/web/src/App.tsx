@@ -7,8 +7,8 @@ import { UserDataProvider } from "./lib/userData.js";
 import { StudyDeskProvider } from "./lib/studyDesk.js";
 import { TimerProvider } from "./lib/timerProvider.js";
 import { AppShell } from "./components/shell/AppShell.js";
-import { Logo, LogoMark } from "./components/brand/Logo.js";
-import { HeroPreview } from "./components/brand/HeroPreview.js";
+import { Logo } from "./components/brand/Logo.js";
+import { HeroSequence, PANEL_COUNT, SequenceDots } from "./components/brand/HeroSequence.js";
 import { ArrowUpRight } from "lucide-react";
 import { GithubIcon } from "./components/brand/GithubIcon.js";
 import { DashboardPage } from "./pages/DashboardPage.js";
@@ -103,6 +103,8 @@ function SignedInApp({ supabase }: { supabase: SupabaseClient }) {
 }
 
 function SignInScreen({ supabase }: { supabase: SupabaseClient }) {
+  const [panel, setPanel] = useState(0);
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-bg bg-grid px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
       {/* A faint wash keeps the entry screen from reading as an empty auth wall,
@@ -116,79 +118,34 @@ function SignInScreen({ supabase }: { supabase: SupabaseClient }) {
         <header className="flex items-center justify-between border-b border-border pb-4">
           <Logo markClassName="h-7 w-7" />
           <span className="hidden font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted sm:inline">
-            Practice system / v1
+            Solve / Track / Repeat{" "}
+            <span className="text-brand">
+              {String(panel + 1).padStart(2, "0")} — {String(PANEL_COUNT).padStart(2, "0")}
+            </span>
           </span>
         </header>
 
-        <main className="grid flex-1 items-center gap-12 py-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-20 lg:py-16">
-          <section className="max-w-xl animate-enter">
-            <div className="mb-7 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">
-              <span className="h-px w-8 bg-brand" />
-              A quieter way to get better
-            </div>
-            <h1 className="max-w-lg text-4xl font-semibold leading-[1.04] tracking-[-0.045em] text-text sm:text-5xl lg:text-[3.65rem]">
-              Let every difficult problem point somewhere.
-            </h1>
-            <p className="mt-6 max-w-lg text-base leading-7 text-text-secondary sm:text-[17px]">
-              LeetTarget turns scattered coding, GATE and CAT sessions into a considered practice loop: choose a
-              focus, notice the pattern in your progress, and leave yourself a clean way back into difficult work.
-            </p>
-
-            <dl className="mt-10 grid gap-5 border-t border-border pt-6 sm:grid-cols-3">
-              <div>
-                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">01 / LeetCode</dt>
-                <dd className="mt-2 text-sm font-medium text-text">Keep coding practice deliberate</dd>
-              </div>
-              <div>
-                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">02 / GATE</dt>
-                <dd className="mt-2 text-sm font-medium text-text">Return to concepts that need time</dd>
-              </div>
-              <div>
-                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">03 / CAT</dt>
-                <dd className="mt-2 text-sm font-medium text-text">Learn from a missed method or set</dd>
-              </div>
-            </dl>
-          </section>
-
-          <section className="relative animate-enter border border-border bg-elevated/80 p-5 shadow-[0_18px_50px_rgb(0_0_0_/_0.06)] backdrop-blur-sm sm:p-7 [animation-delay:80ms]">
-            <span aria-hidden className="absolute -left-px -top-px h-3 w-3 border-l border-t border-brand" />
-            <span aria-hidden className="absolute -bottom-px -right-px h-3 w-3 border-b border-r border-brand" />
-
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand">Begin here</p>
-                <h2 className="mt-2 text-xl font-semibold tracking-[-0.025em] text-text">Build your practice trail.</h2>
-              </div>
-              <LogoMark className="h-8 w-8 shrink-0" title="LeetTarget" />
-            </div>
-
-            <p className="mt-3 max-w-md text-sm leading-6 text-text-secondary">
-              Sign in to organise coding practice, revisit GATE concepts and keep CAT methods close when they need another pass.
-            </p>
-
+        <HeroSequence
+          onIndexChange={setPanel}
+          cta={
             <Button
               variant="primary"
               size="lg"
-              className="mt-6 w-full active:scale-[0.985]"
+              className="w-full active:scale-[0.985]"
               onClick={() => supabase.auth.signInWithOAuth({ provider: "github" })}
             >
               <GithubIcon />
               Continue with GitHub
               <ArrowUpRight className="ml-auto h-4 w-4" aria-hidden />
             </Button>
-
-            <div className="my-7 h-px bg-border" />
-
-            <HeroPreview />
-
-            <p className="mt-4 text-center text-xs leading-5 text-text-muted">
-              One place for your targets, your repetition, and your proof of work.
-            </p>
-          </section>
-        </main>
+          }
+        />
 
         <footer className="flex flex-col gap-2 border-t border-border pt-4 font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted sm:flex-row sm:items-center sm:justify-between">
-          <span>Made for deliberate practice</span>
+          <span className="flex items-center gap-3">
+            <SequenceDots index={panel} />
+            Made for deliberate practice
+          </span>
           <span>LeetCode progress, made legible</span>
         </footer>
       </div>
