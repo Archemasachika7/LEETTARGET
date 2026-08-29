@@ -1,26 +1,45 @@
 import { useState } from "react";
+import { FileText } from "lucide-react";
 import { analyzeResume } from "../lib/ats/scorer";
 import type { AtsReport, AtsSeverity } from "../lib/ats/scorer";
 import { gemmaEnabled, getGemmaSuggestions } from "../lib/ats/llm";
+import { Badge, Button, Card, EmptyState, Eyebrow, Field, SectionHeader, Textarea } from "../ui/index.js";
+import { cn } from "../lib/cn.js";
 
-function scoreColor(n: number): string {
-  if (n >= 90) return "text-emerald-600";
-  if (n >= 75) return "text-amber-600";
-  if (n >= 60) return "text-orange-600";
-  return "text-rose-600";
+type Tier = "success" | "brand" | "warning" | "danger";
+
+function tier(n: number): Tier {
+  if (n >= 90) return "success";
+  if (n >= 75) return "brand";
+  if (n >= 60) return "warning";
+  return "danger";
 }
 
-function barColor(n: number): string {
-  if (n >= 90) return "bg-emerald-500";
-  if (n >= 75) return "bg-amber-500";
-  if (n >= 60) return "bg-orange-500";
-  return "bg-rose-500";
-}
+const TIER_TEXT: Record<Tier, string> = {
+  success: "text-success",
+  brand: "text-brand",
+  warning: "text-warning",
+  danger: "text-danger",
+};
 
-const SEVERITY_STYLE: Record<AtsSeverity, string> = {
-  high: "bg-rose-100 text-rose-800 border-rose-200",
-  medium: "bg-amber-100 text-amber-800 border-amber-200",
-  low: "bg-neutral-100 text-neutral-700 border-neutral-200",
+const TIER_BAR: Record<Tier, string> = {
+  success: "bg-success",
+  brand: "bg-brand",
+  warning: "bg-warning",
+  danger: "bg-danger",
+};
+
+const TIER_RING: Record<Tier, string> = {
+  success: "stroke-success",
+  brand: "stroke-brand",
+  warning: "stroke-warning",
+  danger: "stroke-danger",
+};
+
+const SEVERITY_TONE: Record<AtsSeverity, "danger" | "warning" | "neutral"> = {
+  high: "danger",
+  medium: "warning",
+  low: "neutral",
 };
 
 export default function AtsPage() {
@@ -53,179 +72,195 @@ export default function AtsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 text-neutral-900">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">ATS Score Evaluator</h1>
-        <p className="text-sm text-neutral-600">
-          Paste your resume, get a score out of 100 and the exact reasons behind it. Add the job
-          description for a real keyword-match score. Nothing leaves the browser
-          {gemmaEnabled() ? " except an anonymized snippet sent to Gemma for suggestions" : ""}.
+    <div className="flex flex-col gap-8">
+      <header>
+        <h1 className="text-xl font-semibold tracking-tight text-text">ATS check</h1>
+        <p className="mt-1 text-sm text-text-muted">
+          Paste your resume and get a score out of 100, with the exact reasons behind it. Add the job
+          description too and the keyword score gets real instead of guessed.
         </p>
       </header>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Resume text</span>
-          <textarea
+        <Field label="Resume text">
+          <Textarea
             value={resumeText}
             onChange={(e) => setResumeText(e.target.value)}
-            placeholder="Open your resume PDF, select all, copy, paste here..."
-            className="h-64 rounded-lg border border-neutral-300 bg-white p-3 font-mono text-xs focus:border-neutral-500 focus:outline-none"
+            placeholder="Open your resume, select all, copy, paste here."
+            className="h-64 font-mono text-xs"
           />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">
-            Job description <span className="font-normal text-neutral-500">(optional, but recommended)</span>
-          </span>
-          <textarea
+        </Field>
+        <Field label="Job description" hint="Optional, but the keyword score needs it to mean anything.">
+          <Textarea
             value={jdText}
             onChange={(e) => setJdText(e.target.value)}
-            placeholder="Paste the full job posting to score keyword match..."
-            className="h-64 rounded-lg border border-neutral-300 bg-white p-3 font-mono text-xs focus:border-neutral-500 focus:outline-none"
+            placeholder="Paste the full job posting to score keyword match."
+            className="h-64 font-mono text-xs"
           />
-        </label>
+        </Field>
       </section>
 
       <div className="flex items-center gap-3">
-        <button
-          onClick={handleScore}
-          disabled={!canScore}
-          className="rounded-lg bg-neutral-900 px-5 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {busy ? "Scoring..." : "Score my resume"}
-        </button>
+        <Button variant="primary" onClick={handleScore} disabled={!canScore} loading={busy} loadingText="Scoring…">
+          Score my resume
+        </Button>
         {report && (
-          <button onClick={handleReset} className="text-sm text-neutral-500 underline underline-offset-2">
+          <Button variant="ghost" size="sm" onClick={handleReset}>
             Start over
-          </button>
+          </Button>
         )}
         {resumeText.trim().length > 0 && resumeText.trim().length < 80 && (
-          <span className="text-xs text-rose-600">That does not look like a resume yet — paste the full text.</span>
+          <span className="text-xs text-danger">That's too short to be a full resume — paste all of it.</span>
         )}
       </div>
 
       {report && (
-        <div className="space-y-6">
-          <section className="flex flex-col items-start gap-6 rounded-xl border border-neutral-200 bg-white p-6 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-6">
+          <Card className="flex flex-col items-start gap-6 p-6 sm:flex-row sm:items-center">
             <div className="relative h-28 w-28 shrink-0">
               <svg viewBox="0 0 36 36" className="h-28 w-28 -rotate-90">
-                <circle cx="18" cy="18" r="15.9" fill="none" strokeWidth="3" className="stroke-neutral-200" />
+                <circle cx="18" cy="18" r="15.9" fill="none" strokeWidth="3" className="stroke-surface" />
                 <circle
-                  cx="18" cy="18" r="15.9" fill="none" strokeWidth="3" strokeLinecap="round"
-                  pathLength={100} strokeDasharray={`${report.overall} 100`}
-                  className={report.overall >= 90 ? "stroke-emerald-500" : report.overall >= 75 ? "stroke-amber-500" : report.overall >= 60 ? "stroke-orange-500" : "stroke-rose-500"}
+                  cx="18"
+                  cy="18"
+                  r="15.9"
+                  fill="none"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  pathLength={100}
+                  strokeDasharray={`${report.overall} 100`}
+                  className={cn("transition-[stroke-dasharray] duration-progress ease-smooth", TIER_RING[tier(report.overall)])}
                 />
               </svg>
-              <div className={`absolute inset-0 flex items-center justify-center text-3xl font-bold ${scoreColor(report.overall)}`}>
+              <div
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center font-mono text-3xl font-bold tabular-nums",
+                  TIER_TEXT[tier(report.overall)]
+                )}
+              >
                 {report.overall}
               </div>
             </div>
             <div className="space-y-1">
-              <div className={`text-lg font-semibold ${scoreColor(report.overall)}`}>{report.grade}</div>
-              <p className="max-w-xl text-sm text-neutral-600">{report.summary}</p>
-              <p className="text-xs text-neutral-500">
-                {report.wordCount} words{report.usedJobDescription ? " · scored against your job description" : " · no job description used"}
+              <div className={cn("text-lg font-semibold", TIER_TEXT[tier(report.overall)])}>{report.grade}</div>
+              <p className="max-w-xl text-sm text-text-secondary">{report.summary}</p>
+              <p className="text-xs text-text-muted">
+                {report.wordCount} words
+                {report.usedJobDescription ? " · scored against your job description" : " · no job description used"}
               </p>
             </div>
-          </section>
+          </Card>
 
-          <section className="rounded-xl border border-neutral-200 bg-white p-6">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-neutral-500">Breakdown</h2>
-            <div className="space-y-3">
+          <Card className="p-6">
+            <SectionHeader title="Breakdown" />
+            <div className="mt-4 space-y-3">
               {report.subscores.map((s) => {
                 const pct = s.max > 0 ? Math.round((s.score / s.max) * 100) : 0;
                 return (
                   <div key={s.id}>
-                    <div className="mb-1 flex items-baseline justify-between text-sm">
+                    <div className="mb-1 flex items-baseline justify-between text-sm text-text">
                       <span>{s.label}</span>
-                      <span className="font-mono text-xs text-neutral-500">{s.score}/{s.max}</span>
+                      <span className="font-mono text-xs text-text-muted">
+                        {s.score}/{s.max}
+                      </span>
                     </div>
-                    <div className="h-2 rounded-full bg-neutral-100">
-                      <div className={`h-2 rounded-full ${barColor(pct)}`} style={{ width: `${pct}%` }} />
+                    <div className="h-1.5 w-full overflow-hidden bg-border/60">
+                      <div
+                        className={cn("h-full transition-[width] duration-progress ease-smooth", TIER_BAR[tier(pct)])}
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
-                    {s.notes.length > 0 && <p className="mt-1 text-xs text-neutral-500">{s.notes.join(" ")}</p>}
+                    {s.notes.length > 0 && <p className="mt-1 text-xs text-text-muted">{s.notes.join(" ")}</p>}
                   </div>
                 );
               })}
             </div>
-          </section>
+          </Card>
 
           {report.usedJobDescription && (report.matchedKeywords.length > 0 || report.missingKeywords.length > 0) && (
-            <section className="rounded-xl border border-neutral-200 bg-white p-6">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">Keywords</h2>
-              {report.matchedKeywords.length > 0 && (
-                <div className="mb-3">
-                  <div className="mb-1 text-xs font-medium text-emerald-700">Found in your resume</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {report.matchedKeywords.map((k) => (
-                      <span key={k} className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs text-emerald-800">{k}</span>
-                    ))}
+            <Card className="p-6">
+              <SectionHeader title="Keywords" />
+              <div className="mt-3 space-y-3">
+                {report.matchedKeywords.length > 0 && (
+                  <div>
+                    <Eyebrow className="text-success">Found in your resume</Eyebrow>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {report.matchedKeywords.map((k) => (
+                        <Badge key={k} tone="success">
+                          {k}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-              {report.missingKeywords.length > 0 && (
-                <div>
-                  <div className="mb-1 text-xs font-medium text-rose-700">Missing — the ATS is looking for these</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {report.missingKeywords.map((k) => (
-                      <span key={k} className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs text-rose-800">{k}</span>
-                    ))}
+                )}
+                {report.missingKeywords.length > 0 && (
+                  <div>
+                    <Eyebrow className="text-danger">Missing — the ATS is looking for these</Eyebrow>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {report.missingKeywords.map((k) => (
+                        <Badge key={k} tone="danger">
+                          {k}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </section>
+                )}
+              </div>
+            </Card>
           )}
 
           {report.issues.length > 0 && (
-            <section className="rounded-xl border border-neutral-200 bg-white p-6">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-                Fixes, in order of damage
-              </h2>
-              <ul className="space-y-3">
+            <section className="flex flex-col gap-3">
+              <SectionHeader title="Fixes, in order of damage" />
+              <ul className="flex flex-col gap-3">
                 {report.issues.map((issue, i) => (
-                  <li key={i} className="rounded-lg border border-neutral-200 p-3">
+                  <Card as="li" key={i} className="p-3">
                     <div className="mb-1 flex items-center gap-2">
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${SEVERITY_STYLE[issue.severity]}`}>
-                        {issue.severity}
-                      </span>
-                      <span className="text-sm font-medium">{issue.title}</span>
+                      <Badge tone={SEVERITY_TONE[issue.severity]}>{issue.severity}</Badge>
+                      <span className="text-sm font-medium text-text">{issue.title}</span>
                     </div>
-                    <p className="text-xs text-neutral-600">{issue.detail}</p>
-                    <p className="mt-1 text-xs font-medium text-neutral-800">Fix: {issue.fix}</p>
-                  </li>
+                    <p className="text-xs text-text-secondary">{issue.detail}</p>
+                    <p className="mt-1 text-xs font-medium text-text">Fix: {issue.fix}</p>
+                  </Card>
                 ))}
               </ul>
             </section>
           )}
 
           {tips && tips.length > 0 && (
-            <section className="rounded-xl border border-neutral-200 bg-white p-6">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-                Second opinion — Gemma 2 (free tier)
-              </h2>
-              <ul className="list-disc space-y-2 pl-5 text-sm text-neutral-700">
-                {tips.map((t, i) => <li key={i}>{t}</li>)}
+            <Card className="p-6">
+              <SectionHeader title="Second opinion — Gemma 2 (free tier)" />
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-text-secondary">
+                {tips.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
               </ul>
-            </section>
+            </Card>
           )}
 
           {report.builderLink && (
-            <section className="rounded-xl border border-amber-300 bg-amber-50 p-6">
-              <h2 className="text-sm font-semibold text-amber-900">Under 90? Do not apply yet.</h2>
-              <p className="mt-1 text-sm text-amber-800">
-                {report.builderLink.reason}
-              </p>
+            <Card className="border-warning/30 bg-warning/5 p-6">
+              <h2 className="text-sm font-semibold text-warning">Under 90? Don't apply yet.</h2>
+              <p className="mt-1 text-sm text-text-secondary">{report.builderLink.reason}</p>
               <a
                 href={report.builderLink.url}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-3 inline-block rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                className="mt-3 inline-flex h-9 items-center rounded-sm bg-warning px-3.5 text-sm font-medium text-brand-contrast transition-colors duration-fast hover:bg-warning/85"
               >
                 {report.builderLink.label} →
               </a>
-            </section>
+            </Card>
           )}
         </div>
+      )}
+
+      {!report && !canScore && resumeText.trim().length === 0 && (
+        <EmptyState
+          icon={<FileText className="h-6 w-6" aria-hidden />}
+          title="Nothing scored yet."
+          description="Paste a resume above and score it. Everything runs in your browser — nothing is uploaded unless you've added a Groq key for the optional second opinion."
+        />
       )}
     </div>
   );

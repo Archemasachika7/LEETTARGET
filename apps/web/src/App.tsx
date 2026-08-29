@@ -14,6 +14,7 @@ import { PracticePage } from "./pages/PracticePage.js";
 import { RoadmapPage } from "./pages/RoadmapPage.js";
 import { ProgressPage } from "./pages/ProgressPage.js";
 import { ProfilePage } from "./pages/ProfilePage.js";
+import AtsPage from "./pages/AtsPage.js";
 import { Button, Card, ToastProvider } from "./ui/index.js";
 
 export default function App() {
@@ -81,6 +82,7 @@ function SignedInApp({ supabase }: { supabase: SupabaseClient }) {
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/practice" element={<PracticePage />} />
+                <Route path="/ats" element={<AtsPage />} />
                 <Route path="/roadmap" element={<RoadmapPage />} />
                 <Route path="/progress" element={<ProgressPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
