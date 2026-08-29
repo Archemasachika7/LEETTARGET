@@ -16,6 +16,8 @@ import { PracticePage } from "./pages/PracticePage.js";
 import { RoadmapPage } from "./pages/RoadmapPage.js";
 import { ProgressPage } from "./pages/ProgressPage.js";
 import { ProfilePage } from "./pages/ProfilePage.js";
+import { DoubtsPage } from "./pages/DoubtsPage.js";
+import { SubjectDoubtsPage } from "./pages/SubjectDoubtsPage.js";
 import AtsPage from "./pages/AtsPage.js";
 import { Button, Card, ToastProvider } from "./ui/index.js";
 
@@ -87,6 +89,8 @@ function SignedInApp({ supabase }: { supabase: SupabaseClient }) {
                   <Route path="/practice" element={<PracticePage />} />
                   <Route path="/ats" element={<AtsPage />} />
                   <Route path="/roadmap" element={<RoadmapPage />} />
+                  <Route path="/doubts" element={<DoubtsPage />} />
+                  <Route path="/doubts/:slug" element={<SubjectDoubtsPage />} />
                   <Route path="/progress" element={<ProgressPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   {/* Anything unrecognised lands on the dashboard rather than a

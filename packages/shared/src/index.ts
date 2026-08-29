@@ -5,3 +5,4 @@ export * from "./github.js";
 export * from "./progress.js";
 export * from "./topics.js";
 export * from "./achievements.js";
+export * from "./subjects.js";

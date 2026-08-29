@@ -150,3 +150,51 @@ export interface PracticeSession {
   startedAt: string;
   createdAt: string;
 }
+
+/** A doubts-forum subject — GATE, CAT, PDSA, or anything else a user names.
+ * Creation is open (see migration 0008_doubts.sql), so `slug` is the
+ * normalised join key that keeps "PDSA", "pdsa" and "P.D.S.A." from
+ * fragmenting into three subjects; `name` keeps whatever casing/spacing the
+ * creator typed. */
+export interface Subject {
+  id: string;
+  slug: string;
+  name: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export type DoubtStatus = "open" | "resolved";
+
+/** A question posted to a subject, visible to every member of it. Optional
+ * `problemId` ties it to a canonical LeetCode problem so it can also
+ * surface from that problem's own context, not only the subject's feed.
+ * `solutionText` ships to the browser with the rest of the doubt — the
+ * reveal panel in the UI is a "don't spoil it for myself" toggle, not
+ * access control. */
+export interface Doubt {
+  id: string;
+  subjectId: string;
+  authorId: string;
+  problemId?: string;
+  title: string;
+  questionText?: string;
+  solutionText?: string;
+  status: DoubtStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type DoubtImageKind = "question" | "solution";
+
+/** An uploaded screenshot attached to a doubt. `storagePath` is a key into
+ * the private `doubt-images` bucket — never a public URL — so the app
+ * always fetches it through a signed URL scoped to subject membership. */
+export interface DoubtImage {
+  id: string;
+  doubtId: string;
+  uploadedBy: string;
+  kind: DoubtImageKind;
+  storagePath: string;
+  createdAt: string;
+}

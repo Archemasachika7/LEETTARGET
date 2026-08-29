@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { Archive, Check, CircleDot, Download, FileText, FolderUp, Paperclip, RotateCcw, Trash2, Upload, X } from "lucide-react";
+import { Archive, Check, CircleDot, Download, FileText, FolderUp, MessageCircleQuestion, Paperclip, RotateCcw, Trash2, Upload, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { type StudyTrack, useStudyDesk } from "../../lib/studyDesk.js";
 import { deleteStudyAttachment, openStudyAttachment, restoreStudyAttachments, saveStudyAttachments, validateAttachmentFiles } from "../../lib/studyDeskAttachments.js";
 import { downloadStudyDeskBackup, parseStudyDeskBackup } from "../../lib/studyDeskBackup.js";
@@ -193,6 +194,12 @@ export function StuckDesk({ mode }: { mode: Exclude<StudyTrack, "leetcode"> }) {
             onChange={handleBackupImport}
             aria-label="Import a LeetTarget study-desk backup"
           />
+          <Link to="/doubts">
+            <Button size="sm" variant="ghost">
+              <MessageCircleQuestion className="h-3.5 w-3.5" aria-hidden />
+              Community doubts
+            </Button>
+          </Link>
           <Button size="sm" variant="ghost" onClick={() => importInputRef.current?.click()}>
             <Upload className="h-3.5 w-3.5" aria-hidden />
             Import
