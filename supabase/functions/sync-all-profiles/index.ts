@@ -75,6 +75,20 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { headers: CORS_HEADERS });
   }
 
+  // Everything below runs inside this try — an uncaught throw here would
+  // otherwise let Deno's own default error response escape (no CORS
+  // headers on it), which the browser can't tell apart from a network
+  // failure: it just shows up client-side as "Failed to fetch" with zero
+  // detail. Every exit path, success or failure, needs to go through
+  // json() so Access-Control-Allow-Origin is always present.
+  try {
+    return await handle();
+  } catch (err) {
+    return json({ error: `sync-all-profiles crashed: ${err instanceof Error ? err.message : String(err)}` }, 500);
+  }
+});
+
+async function handle(): Promise<Response> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const headers = {
@@ -138,7 +152,7 @@ Deno.serve(async (req: Request) => {
   }
 
   return json({ skipped: false, processed: outcomes.length, outcomes, lastSyncedAt: now, lastSummary: summary }, 200);
-});
+}
 
 async function importOne(
   supabaseUrl: string,
