@@ -132,17 +132,21 @@ export interface LeaderboardEntry {
 }
 
 /** A timed practice session, joinable by a short shareable code. Everyone
- * with the code sees the same countdown because it's derived from
- * `startedAt` + `durationSeconds` — no realtime sync needed, every client
- * computes the identical remaining time on its own clock. Not tied to a
- * specific target/problem in v1 — `label` is a free-text description the
- * host can optionally set ("Two Sum + Group Anagrams", "Mock interview"). */
+ * with the code sees the same countdown (or stopwatch) because it's
+ * derived from `startedAt` (+ `durationSeconds`, for a countdown) — no
+ * realtime sync needed, every client computes the identical remaining or
+ * elapsed time on its own clock. Not tied to a specific target/problem in
+ * v1 — `label` is a free-text description the host can optionally set
+ * ("Two Sum + Group Anagrams", "Mock interview"). */
 export interface PracticeSession {
   id: string;
   code: string;
   hostUserId: string;
   label?: string;
-  durationSeconds: number;
+  /** Absent means an open-ended stopwatch (counts up, no end) rather than
+   * a countdown to a fixed duration. Any positive value up to 86400 (24h)
+   * when present — not capped anywhere below that by the UI. */
+  durationSeconds?: number;
   startedAt: string;
   createdAt: string;
 }

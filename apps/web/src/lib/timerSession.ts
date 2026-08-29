@@ -24,18 +24,19 @@ function rowToSession(row: any): PracticeSession {
     code: row.code,
     hostUserId: row.host_user_id,
     label: row.label ?? undefined,
-    durationSeconds: row.duration_seconds,
+    durationSeconds: row.duration_seconds ?? undefined,
     startedAt: row.started_at,
     createdAt: row.created_at,
   };
 }
 
-/** Creates a shared session and returns it with its shareable code. Retries
- * a handful of times on a code collision (vanishingly unlikely at 6
- * characters from a 33-symbol alphabet, but cheap to handle). */
+/** Creates a shared session and returns it with its shareable code. Pass no
+ * `durationSeconds` for an open-ended stopwatch. Retries a handful of times
+ * on a code collision (vanishingly unlikely at 6 characters from a
+ * 33-symbol alphabet, but cheap to handle). */
 export async function createPracticeSession(
   hostUserId: string,
-  durationSeconds: number,
+  durationSeconds?: number,
   label?: string
 ): Promise<PracticeSession> {
   const client = requireClient();
@@ -43,7 +44,7 @@ export async function createPracticeSession(
     const code = randomCode();
     const { data, error } = await client
       .from("practice_sessions")
-      .insert({ code, host_user_id: hostUserId, duration_seconds: durationSeconds, label: label || null })
+      .insert({ code, host_user_id: hostUserId, duration_seconds: durationSeconds ?? null, label: label || null })
       .select()
       .single();
     if (!error) return rowToSession(data);
