@@ -9,6 +9,7 @@ import {
   Chassis,
   MonoLabel,
   PageHeader,
+  Reveal,
   Panel,
   ProgressBar,
   SectionHeader,
@@ -74,7 +75,8 @@ export function StudyTrackDashboard({ mode }: { mode: Exclude<StudyTrack, "leetc
         />
       )}
 
-      <Chassis as="section" className="overflow-hidden">
+      <Reveal as="section">
+      <Chassis className="overflow-hidden">
         <TelemetryBar left={<span>{track.label} / recall desk</span>} right={<span>Keep the useful friction</span>} />
         <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           <Panel mark>
@@ -103,9 +105,10 @@ export function StudyTrackDashboard({ mode }: { mode: Exclude<StudyTrack, "leetc
           </Panel>
         </div>
       </Chassis>
+      </Reveal>
 
       {/* Subject coverage — the exam-track answer to topic mastery. */}
-      <section className="flex flex-col gap-3">
+      <Reveal as="section" className="flex flex-col gap-3">
         <SectionHeader
           title="Subject coverage"
           description={`${touched} of ${track.subjects.length} subjects have something logged`}
@@ -135,9 +138,9 @@ export function StudyTrackDashboard({ mode }: { mode: Exclude<StudyTrack, "leetc
             </div>
           ))}
         </Chassis>
-      </section>
+      </Reveal>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
+      <Reveal className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
         <section className="border border-border bg-elevated p-5 sm:p-6">
           <SectionHeader
             title="One useful next move"
@@ -178,7 +181,7 @@ export function StudyTrackDashboard({ mode }: { mode: Exclude<StudyTrack, "leetc
             Recall over accumulation
           </div>
         </aside>
-      </div>
+      </Reveal>
     </div>
   );
 }

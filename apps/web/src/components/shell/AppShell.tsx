@@ -5,6 +5,7 @@ import { Logo, LogoMark } from "../brand/Logo.js";
 import { Tooltip } from "../../ui/index.js";
 import { cn } from "../../lib/cn.js";
 import type { Theme } from "../../lib/theme.js";
+import { useScrolled } from "../../lib/useScrolled.js";
 import { TrackSwitcher } from "../study/TrackSwitcher.js";
 import { AssistantWidget } from "../assistant/AssistantWidget.js";
 
@@ -32,6 +33,7 @@ interface Props {
 export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
   const location = useLocation();
   const navigate = useNavigate();
+  const scrolled = useScrolled();
 
   return (
     <div className="min-h-screen bg-bg bg-grid">
@@ -42,8 +44,24 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-40 border-b border-border bg-bg/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-content items-center gap-6 px-4 sm:px-6">
+      {/* The bar condenses and gains weight once the page moves under it —
+       * flat and tall at rest, shorter and more opaque in flight. It reads as
+       * the content sliding beneath a fixed surface rather than the header
+       * being a static strip that happens to be at the top. */}
+      <header
+        className={cn(
+          "sticky top-0 z-40 border-b transition-[height,background-color,border-color] duration-normal",
+          scrolled
+            ? "border-border bg-bg/95 backdrop-blur-md"
+            : "border-transparent bg-bg/80 backdrop-blur"
+        )}
+      >
+        <div
+          className={cn(
+            "mx-auto flex max-w-content items-center gap-6 px-4 transition-[height] duration-normal sm:px-6",
+            scrolled ? "h-14" : "h-16"
+          )}
+        >
           <NavLink to="/" className="shrink-0" aria-label="Waypoint home">
             <Logo className="hidden sm:inline-flex" />
             <LogoMark className="sm:hidden" title="Waypoint" />
