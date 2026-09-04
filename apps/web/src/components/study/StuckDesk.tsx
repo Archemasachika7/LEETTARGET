@@ -192,7 +192,7 @@ export function StuckDesk({ mode }: { mode: Exclude<StudyTrack, "leetcode"> }) {
             accept="application/json,.json"
             className="sr-only"
             onChange={handleBackupImport}
-            aria-label="Import a LeetTarget study-desk backup"
+            aria-label="Import a Waypoint study-desk backup"
           />
           <Link to="/doubts">
             <Button size="sm" variant="ghost">

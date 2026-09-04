@@ -152,7 +152,7 @@ export async function deleteTarget(id: string): Promise<void> {
  * path for a practice session, where the reader has just solved something and
  * shouldn't have to wait for a sync to see it reflected. It only moves the
  * target's own status — it does not invent a `solved_problems` row, because
- * that table means "LeetTarget observed this solve", and a checkbox isn't an
+ * that table means "Waypoint observed this solve", and a checkbox isn't an
  * observation. */
 export async function setTargetStatus(id: string, status: TargetStatus): Promise<void> {
   const { error } = await requireClient().from("targets").update({ status }).eq("id", id);
@@ -256,7 +256,7 @@ export interface GithubSyncResult {
 }
 
 /** Backfills solved status from a repo that already has solutions
- * committed to it (e.g. a LeetHub repo predating LeetTarget) — the
+ * committed to it (e.g. a LeetHub repo predating Waypoint) — the
  * extension and "Import from LeetCode" only ever see solves going
  * forward/recently, so without this, an existing repo's history never
  * shows up in solved status or the difficulty chart. Matches folder/file
@@ -973,7 +973,7 @@ export async function listSolvedWithProblems(userId: string): Promise<SolvedWith
     }));
 }
 
-/** Overrides the GitHub path LeetTarget associates with a solve — for when
+/** Overrides the GitHub path Waypoint associates with a solve — for when
  * the auto-detected `{difficulty}/{slug}` guess (see `buildSolutionPath`)
  * doesn't match how the repo is actually laid out. */
 export async function updateSolvedGithubPath(id: string, githubPath: string): Promise<void> {

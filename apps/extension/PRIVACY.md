@@ -1,8 +1,8 @@
-# LeetTarget Extension — Privacy Policy
+# Waypoint Extension — Privacy Policy
 
 _Last updated: 2026-08-26_
 
-LeetTarget is self-hosted by design: there is no LeetTarget-operated server.
+Waypoint is self-hosted by design: there is no Waypoint-operated server.
 The extension talks directly to services **you** configure — your own
 GitHub repository and, optionally, your own Supabase project — and to
 LeetCode's own pages. This document describes exactly what the extension
@@ -24,15 +24,15 @@ any other website.
 
 Configured via the extension's Options page, stored in `chrome.storage.sync`
 (which Chrome syncs across your own signed-in browser instances, the same
-as bookmarks — this data is not visible to LeetTarget or anyone else):
+as bookmarks — this data is not visible to Waypoint or anyone else):
 
 - the GitHub repository (`owner/repo`, branch, path template) you point it at
 - a GitHub personal access token you provide
-- (optional) a Supabase project URL, anon key, your LeetTarget user id, and
+- (optional) a Supabase project URL, anon key, your Waypoint user id, and
   a Supabase access token, if you choose to also sync solves to the
-  LeetTarget dashboard
+  Waypoint dashboard
 
-None of this is transmitted to any server operated by LeetTarget, because
+None of this is transmitted to any server operated by Waypoint, because
 none exists.
 
 ## Who the extension sends data to
@@ -44,7 +44,7 @@ none exists.
 - **Your own Supabase project** (`*.supabase.co`) — only if you've filled
   in the optional Supabase fields in the extension's options. When set,
   the extension writes the solved-problem record to your project's
-  database, using your access token, so the LeetTarget dashboard (which
+  database, using your access token, so the Waypoint dashboard (which
   also only talks to your Supabase project) can display it.
 - **LeetCode** (`leetcode.com`) — the extension observes page activity but
   does not send LeetCode any additional data beyond what your normal

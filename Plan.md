@@ -1,8 +1,8 @@
-# LeetTarget — Project Plan
+# Waypoint — Project Plan
 
 ## 1. Vision
 
-LeetTarget is a website + browser extension pair that tracks a user's LeetCode
+Waypoint is a website + browser extension pair that tracks a user's LeetCode
 progress, mirrors solved solutions into a GitHub repo (the way LeetHub does),
 and lets the user set and track **targets** — problems they intend to solve —
 either individually, in bulk via CSV upload, or pulled in automatically from
@@ -12,7 +12,7 @@ Two pieces work together:
 
 - **Extension** — runs on `leetcode.com`, detects accepted submissions,
   commits the solution to the user's GitHub repo (LeetHub-style), and reports
-  the solve back to the LeetTarget backend so the site stays in sync without
+  the solve back to the Waypoint backend so the site stays in sync without
   the user doing anything extra.
 - **Site (web app)** — the dashboard. Connect a GitHub repo, see solved vs.
   targeted problems, upload a CSV of target problems, add one-off targets by
@@ -26,7 +26,7 @@ Two pieces work together:
    - Secondary/backfill: LeetCode's public (unofficial) GraphQL API, queried
      by username, since it's free and requires no auth for public profile
      stats (`solvedProblem`, recent AC submissions, per-difficulty counts).
-2. **GitHub repo mapping** — user points LeetTarget at the GitHub repo their
+2. **GitHub repo mapping** — user points Waypoint at the GitHub repo their
    solutions live in (their existing LeetHub repo works as-is).
    - **Solution mapping**: problem → path of the solution file in that repo
      (auto-detected from LeetHub's commit conventions, e.g.

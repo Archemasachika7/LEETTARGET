@@ -84,6 +84,11 @@ interface StudyDeskContextValue {
 
 const StudyDeskContext = createContext<StudyDeskContextValue | undefined>(undefined);
 
+/** Keeps its pre-rename value on purpose. This key is where every existing
+ * learner's GATE/CAT desk already lives on their device; renaming it would
+ * silently empty the desk for everyone who had one, to change a string no user
+ * ever sees. Same reasoning as the IndexedDB name in studyDeskAttachments.ts,
+ * where the cost would be orphaning saved attachment files. */
 function storageKey(userId: string) {
   return `leettarget-study-desk:${userId}`;
 }

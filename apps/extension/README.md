@@ -1,8 +1,8 @@
-# LeetTarget extension
+# Waypoint extension
 
 Manifest V3 extension that detects accepted LeetCode submissions, commits
 the solution to your GitHub repo (LeetHub-style), and optionally syncs the
-solve to your LeetTarget account.
+solve to your Waypoint account.
 
 ## How it works
 
@@ -33,7 +33,7 @@ This bundles everything into `apps/extension/dist/`.
 1. Open `chrome://extensions`.
 2. Enable "Developer mode" (top right).
 3. Click "Load unpacked" and select `apps/extension/dist`.
-4. Click the LeetTarget icon → Options, and fill in:
+4. Click the Waypoint icon → Options, and fill in:
    - A GitHub personal access token with `repo` scope (Settings →
      Developer settings → Personal access tokens on GitHub). This is the
      one thing that's always manual — it never leaves the extension.

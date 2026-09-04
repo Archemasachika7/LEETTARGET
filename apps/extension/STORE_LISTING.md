@@ -1,9 +1,9 @@
 # Chrome Web Store listing — working notes
 
 Everything needed to fill out the Chrome Web Store developer dashboard for
-LeetTarget. This isn't submitted anywhere automatically — it's the copy to
+Waypoint. This isn't submitted anywhere automatically — it's the copy to
 paste in when someone with a Chrome Web Store developer account (one-time
-$5 registration fee, a Google requirement, not a LeetTarget one) does the
+$5 registration fee, a Google requirement, not a Waypoint one) does the
 actual submission.
 
 ## Package
@@ -17,7 +17,7 @@ ready to upload as-is under Package → "Upload new package".
 
 ## Store listing copy
 
-**Name:** LeetTarget
+**Name:** Waypoint
 
 **Summary** (132 chars max):
 > Sync accepted LeetCode solutions to your GitHub repo and track progress
@@ -27,10 +27,10 @@ ready to upload as-is under Package → "Upload new package".
 
 **Description:**
 
-> LeetTarget watches leetcode.com for accepted submissions and commits the
+> Waypoint watches leetcode.com for accepted submissions and commits the
 > solution straight to your own GitHub repository — compatible with
 > existing LeetHub-style repos, no migration needed. Pair it with the
-> LeetTarget dashboard (self-hosted, your own Supabase project) to:
+> Waypoint dashboard (self-hosted, your own Supabase project) to:
 >
 > - See how many problems you've solved, and which ones
 > - Upload a CSV of target problems and track progress against it
@@ -38,7 +38,7 @@ ready to upload as-is under Package → "Upload new package".
 > - See which GitHub file backs each solved problem, and fix it by hand
 >   when the auto-detected path guesses wrong
 >
-> LeetTarget has no server of its own — it talks directly to the GitHub
+> Waypoint has no server of its own — it talks directly to the GitHub
 > repo and (optionally) the Supabase project you configure. See the
 > privacy policy for exactly what's read, stored, and sent.
 
@@ -58,7 +58,7 @@ not as a second unrelated feature.
 | `storage` | Stores the user's GitHub repo/token and optional Supabase config, entered on the Options page. No alternative API provides this. |
 | `host_permissions: leetcode.com/*` | Content script needs to run on LeetCode problem pages to detect accepted submissions — this is the extension's entire reason to exist. |
 | `host_permissions: api.github.com/*` | Commits the solved code to the user's configured GitHub repository via the REST API. |
-| `host_permissions: *.supabase.co/*` | Optional: syncs the solve to the user's own Supabase project so the LeetTarget dashboard can display it. Only used if the user fills in the optional Supabase fields. |
+| `host_permissions: *.supabase.co/*` | Optional: syncs the solve to the user's own Supabase project so the Waypoint dashboard can display it. Only used if the user fills in the optional Supabase fields. |
 
 ## Privacy
 

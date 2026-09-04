@@ -1,13 +1,18 @@
 import { cn } from "../../lib/cn.js";
 
-/** The LeetTarget mark: a target whose outer ring is drawn as an incomplete
- * arc (progression toward a goal, not a finished circle) closing around a
- * checkmark at the bullseye (the solve that lands it). Deliberately a
- * geometric target rather than anything resembling a weapon sight — this is a
- * developer training tool, and the motif is precision and progress.
+/** The Waypoint mark: a point plotted above a measured datum line.
  *
- * Strokes use `currentColor` for the ring and the brand token for the arc, so
- * the mark inherits its surroundings in both themes and needs no variants. */
+ * A waypoint is a fixed position you navigate toward — which is what this
+ * product now tracks, whether the destination is an exam date, a placement
+ * season or a problem count. The diamond is the marker used for a plotted
+ * position on a navigation chart; the ruled line beneath it with its tick
+ * marks is the datum that position is measured against. Together they say
+ * "a known point, a known distance out" rather than the old target's "aim and
+ * hit", which only ever described the LeetCode half of the app.
+ *
+ * Strokes use `currentColor` for the chassis and the brand token for the
+ * marker itself, so the mark inherits its surroundings in both themes without
+ * needing variants. */
 export function LogoMark({ className, title }: { className?: string; title?: string }) {
   return (
     <svg
@@ -19,39 +24,39 @@ export function LogoMark({ className, title }: { className?: string; title?: str
       aria-label={title}
     >
       {title && <title>{title}</title>}
-      {/* Full ring, faint — the whole target. */}
-      <circle cx="12" cy="12" r="9.25" className="stroke-current opacity-25" strokeWidth="1.75" />
-      {/* Progress arc — ~72% of the ring, gap opening at the top right. */}
-      <circle
-        cx="12"
-        cy="12"
-        r="9.25"
+
+      {/* The plotted marker. */}
+      <path
+        d="M12 3.25 18.4 9.6 12 15.95 5.6 9.6Z"
         className="stroke-brand"
         strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeDasharray="41.8 16.3"
-        transform="rotate(-105 12 12)"
-      />
-      {/* Bullseye: the checkmark that lands it. */}
-      <path
-        d="M8.4 12.15 11 14.75 15.9 9.5"
-        className="stroke-brand"
-        strokeWidth="2"
-        strokeLinecap="round"
         strokeLinejoin="round"
+      />
+      {/* Position dot at its centre. */}
+      <circle cx="12" cy="9.6" r="1.85" className="fill-brand" />
+
+      {/* Drop line down to the datum — the measured distance. */}
+      <path d="M12 15.95V20.4" className="stroke-current opacity-30" strokeWidth="1.5" strokeLinecap="round" />
+
+      {/* Datum line with end ticks, the way a dimension is drawn. */}
+      <path
+        d="M4.4 20.4h15.2M4.4 18.9v3M19.6 18.9v3"
+        className="stroke-current opacity-30"
+        strokeWidth="1.5"
+        strokeLinecap="round"
       />
     </svg>
   );
 }
 
-/** Mark plus wordmark. "Leet" in regular weight, "Target" in semibold — the
- * emphasis falls on the half of the name that says what the product does. */
+/** Mark plus wordmark. "Way" regular, "point" semibold — the emphasis lands
+ * on the half of the name that means "a fixed thing you're heading toward". */
 export function Logo({ className, markClassName }: { className?: string; markClassName?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      <LogoMark className={markClassName} title="LeetTarget" />
+      <LogoMark className={markClassName} title="Waypoint" />
       <span className="text-[15px] tracking-tight text-text">
-        Leet<span className="font-semibold">Target</span>
+        Way<span className="font-semibold">point</span>
       </span>
     </span>
   );

@@ -10,7 +10,7 @@ async function render() {
   }
 
   summary.innerHTML = `Committing solves to <strong>${config.githubOwner}/${config.githubRepo}</strong>${
-    config.leetTargetUserId ? " and syncing to LeetTarget." : ". LeetTarget sync is off."
+    config.leetTargetUserId ? " and syncing to Waypoint." : ". Waypoint sync is off."
   }`;
 }
 

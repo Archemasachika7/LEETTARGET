@@ -53,7 +53,7 @@ export function RoadmapPage() {
           title="No topics analysed yet."
           description={
             leetCodeProxyUrl
-              ? "LeetTarget doesn't know which topics your problems belong to until it asks LeetCode. Analysing fetches the real tags for the problems in your list."
+              ? "Waypoint doesn't know which topics your problems belong to until it asks LeetCode. Analysing fetches the real tags for the problems in your list."
               : "Topic data needs the leetcode-proxy edge function, which isn't configured yet."
           }
           action={analyseButton || undefined}

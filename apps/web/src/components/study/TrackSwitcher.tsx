@@ -11,7 +11,7 @@ const ICONS = {
 /**
  * This is deliberately a segmented control rather than a row of product cards.
  * Switching study tracks should feel like changing the lens on one workspace,
- * not leaving LeetTarget for a different app.
+ * not leaving Waypoint for a different app.
  */
 export function TrackSwitcher({
   className,

@@ -99,7 +99,7 @@ export interface FetchRepoSolvedSlugsOptions {
 
 /** Best-effort match of a mapped GitHub repo's existing folder/file names
  * back to LeetCode slugs, so a repo that already has solutions committed
- * (e.g. from LeetHub, before LeetTarget existed) can be backfilled instead
+ * (e.g. from LeetHub, before Waypoint existed) can be backfilled instead
  * of only tracking solves going forward. Not tied to one exact LeetHub
  * layout: prefers folder names (the more reliable signal when a repo nests
  * each solution in its own directory — "1750-two-sum/solution.py") and

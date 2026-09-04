@@ -13,7 +13,7 @@ interface Props {
   onSynced?: () => void;
 }
 
-/** Points LeetTarget at the GitHub repo solutions live in (LeetHub-compatible
+/** Points Waypoint at the GitHub repo solutions live in (LeetHub-compatible
  * — no reorganising needed). "Sync from GitHub" runs the other direction: for
  * a repo that already has solutions committed, it scans and backfills solved
  * status rather than only tracking new solves. */

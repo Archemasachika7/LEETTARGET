@@ -1,27 +1,77 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpenCheck, RotateCcw, TimerReset } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Layers, RotateCcw } from "lucide-react";
 import { type StudyTrack, useStudyDesk } from "../../lib/studyDesk.js";
-import { Button, Chassis, MonoLabel, Panel, SectionHeader, StatusDot, TelemetryBar } from "../../ui/index.js";
+import { useUserData } from "../../lib/userData.js";
+import { useGoals } from "../../lib/useGoals.js";
+import { GoalDeck } from "../goals/GoalDeck.js";
+import {
+  Button,
+  Chassis,
+  MonoLabel,
+  Panel,
+  ProgressBar,
+  SectionHeader,
+  SkeletonRows,
+  StatusDot,
+  TelemetryBar,
+} from "../../ui/index.js";
 
 /**
- * A small, honest home for the exam modes. It doesn't pretend CAT or GATE are
- * a solved-data product yet; it points the learner back to the questions they
- * deliberately parked, which is the behavior this feature is built to support.
+ * The exam tracks' home. This used to be three counters and an encouraging
+ * sentence, on the reasoning that GATE and CAT were a lighter side-feature
+ * next to LeetCode. That was the wrong shape: an exam has a fixed date and a
+ * syllabus, which is *more* structure than a problem queue, not less.
+ *
+ * So it now leads with the same thing the LeetCode dashboard does — the
+ * nearest dated commitment and whether the work is keeping up with it — and
+ * follows with coverage across the track's own subjects, which is the exam
+ * equivalent of topic mastery.
  */
 export function StudyTrackDashboard({ mode }: { mode: Exclude<StudyTrack, "leetcode"> }) {
   const { track, stuckItems } = useStudyDesk();
+  const { userId } = useUserData();
+  const { goals, loading: goalsLoading, refresh: refreshGoals } = useGoals(userId);
+
   const items = stuckItems.filter((item) => item.track === mode);
   const stuck = items.filter((item) => item.status === "stuck").length;
   const revisit = items.filter((item) => item.status === "revisit").length;
   const cleared = items.filter((item) => item.status === "cleared").length;
 
+  // Coverage per subject, from the track's own declared syllabus rather than
+  // whatever subjects happen to appear in saved items — a subject with nothing
+  // logged against it is the most informative row on the list.
+  const bySubject = track.subjects.map((subject) => {
+    const subjectItems = items.filter((item) => item.subject === subject);
+    return {
+      subject,
+      total: subjectItems.length,
+      cleared: subjectItems.filter((item) => item.status === "cleared").length,
+    };
+  });
+  const touched = bySubject.filter((s) => s.total > 0).length;
+
   return (
     <div className="flex flex-col gap-8">
       <header className="max-w-2xl">
         <MonoLabel index={track.shortLabel}>{track.kicker}</MonoLabel>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-text">A place to return to difficult work.</h1>
-        <p className="mt-2 text-sm leading-6 text-text-muted">{track.description}</p>
+        <h1 className="mt-3 text-headline font-semibold text-text">A place to return to difficult work.</h1>
+        <p className="mt-3 text-sm leading-6 text-text-muted">{track.description}</p>
       </header>
+
+      {/* The same dated spine as every other track. Progress on an exam goal is
+       * counted as items worked through and cleared — the only quantity this
+       * track actually records. */}
+      {goalsLoading ? (
+        <SkeletonRows rows={2} />
+      ) : (
+        <GoalDeck
+          goals={goals}
+          track={mode}
+          userId={userId}
+          progressFor={() => cleared}
+          onChanged={refreshGoals}
+        />
+      )}
 
       <Chassis as="section" className="overflow-hidden">
         <TelemetryBar left={<span>{track.label} / recall desk</span>} right={<span>Keep the useful friction</span>} />
@@ -53,6 +103,39 @@ export function StudyTrackDashboard({ mode }: { mode: Exclude<StudyTrack, "leetc
         </div>
       </Chassis>
 
+      {/* Subject coverage — the exam-track answer to topic mastery. */}
+      <section className="flex flex-col gap-3">
+        <SectionHeader
+          title="Subject coverage"
+          description={`${touched} of ${track.subjects.length} subjects have something logged`}
+          icon={<Layers className="h-4 w-4 text-text-muted" aria-hidden />}
+        />
+        <Chassis className="stagger divide-y divide-border">
+          {bySubject.map((row) => (
+            <div key={row.subject} className="flex items-center gap-4 px-4 py-3">
+              <span className="min-w-0 flex-1 truncate text-sm text-text">{row.subject}</span>
+              {row.total === 0 ? (
+                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
+                  Nothing logged
+                </span>
+              ) : (
+                <>
+                  <ProgressBar
+                    value={row.cleared}
+                    max={row.total}
+                    className="hidden w-40 sm:block"
+                    label={`${row.subject}: ${row.cleared} of ${row.total} cleared`}
+                  />
+                  <span className="shrink-0 font-mono text-[11px] text-text-muted tnum">
+                    {row.cleared}/{row.total}
+                  </span>
+                </>
+              )}
+            </div>
+          ))}
+        </Chassis>
+      </section>
+
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
         <section className="border border-border bg-elevated p-5 sm:p-6">
           <SectionHeader
@@ -60,7 +143,7 @@ export function StudyTrackDashboard({ mode }: { mode: Exclude<StudyTrack, "leetc
             description="A strong review habit starts by making the return easy."
             icon={<BookOpenCheck className="h-4 w-4 text-brand" aria-hidden />}
           />
-          <p className="mt-6 max-w-xl text-lg font-medium leading-7 tracking-tight text-text">
+          <p className="mt-6 max-w-xl text-title font-medium text-text">
             {items.length === 0
               ? "Save the next question that slows you down. You are not making a backlog—you are leaving a clear trail back into the work."
               : revisit > 0
@@ -83,7 +166,7 @@ export function StudyTrackDashboard({ mode }: { mode: Exclude<StudyTrack, "leetc
             className="absolute inset-0 -z-10 h-full w-full object-cover opacity-[0.13] grayscale mix-blend-multiply dark:opacity-[0.08] dark:mix-blend-screen"
           />
           <div className="flex h-7 w-7 items-center justify-center border border-border bg-elevated text-brand">
-            <TimerReset className="h-4 w-4" aria-hidden />
+            <RotateCcw className="h-4 w-4" aria-hidden />
           </div>
           <h2 className="mt-4 text-sm font-semibold text-text">The revisit rule</h2>
           <p className="mt-2 text-[13px] leading-6 text-text-muted">

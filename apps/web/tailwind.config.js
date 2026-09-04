@@ -41,6 +41,14 @@ export default {
         sans: ["Geist", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["Geist Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
+      // Fluid steps for the few figures that carry a page (see index.css).
+      // Tracking tightens as size grows, which is what keeps large numerals
+      // reading as display type rather than as inflated body text.
+      fontSize: {
+        display: ["var(--step-display)", { lineHeight: "0.95", letterSpacing: "-0.03em" }],
+        headline: ["var(--step-headline)", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        title: ["var(--step-title)", { lineHeight: "1.25", letterSpacing: "-0.01em" }],
+      },
       transitionDuration: {
         fast: "var(--motion-fast)",
         normal: "var(--motion-normal)",
