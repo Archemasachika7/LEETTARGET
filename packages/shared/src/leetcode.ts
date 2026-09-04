@@ -210,7 +210,7 @@ export interface LeetCodeQuestionMeta {
   difficulty: Problem["difficulty"];
   /** LeetCode's own topic tags ("Array", "Dynamic Programming", …), lifted
    * verbatim. These are the only real topic signal available — nothing in
-   * LeetTarget infers or invents a topic for a problem. */
+   * Waypoint infers or invents a topic for a problem. */
   topics: string[];
 }
 

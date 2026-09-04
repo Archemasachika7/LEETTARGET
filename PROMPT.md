@@ -1,6 +1,6 @@
 # Product Prompt
 
-This document is the working spec for LeetTarget, distilled from the
+This document is the working spec for Waypoint, distilled from the
 original ask so future work (human or AI-assisted) has a single source of
 truth for *what* to build. Engineering conventions live in `CLAUDE.md`;
 architecture and phasing live in `Plan.md`. This file is the product intent.
@@ -46,7 +46,7 @@ architecture and phasing live in `Plan.md`. This file is the product intent.
       LeetCode's public GraphQL endpoint as a backfill/import option.
       (`ImportLeetCode` via the `leetcode-proxy` edge function.)
 - [x] **Extension parity with LeetHub**: still commits accepted solutions to
-      the user's GitHub repo, so switching to LeetTarget costs nothing versus
+      the user's GitHub repo, so switching to Waypoint costs nothing versus
       using LeetHub alone. (`background.ts` commits to GitHub independent of
       whether the Supabase sync succeeds.)
 

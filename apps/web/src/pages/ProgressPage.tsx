@@ -17,7 +17,7 @@ type View = "overview" | "solutions" | "leaderboard";
  * separate nav entries.
  *
  * Note what's deliberately absent: accuracy, success rate and average solve
- * time. LeetTarget has no failed-attempt or timing data — LeetCode's public
+ * time. Waypoint has no failed-attempt or timing data — LeetCode's public
  * API returns only accepted submissions — so those figures could only be
  * invented, and an analytics page that makes numbers up is worse than one
  * that shows fewer. */
@@ -98,7 +98,7 @@ export function ProgressPage() {
       {view === "solutions" && (
         <section className="flex flex-col gap-3">
           <p className="text-sm text-text-muted">
-            Where LeetTarget thinks each solution lives in your repo — correct it if the guess is wrong.
+            Where Waypoint thinks each solution lives in your repo — correct it if the guess is wrong.
           </p>
           <SolutionMappingTable userId={userId} refreshKey={refreshTick} />
         </section>

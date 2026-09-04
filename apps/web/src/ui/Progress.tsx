@@ -93,13 +93,22 @@ export function SegmentBar({
   max: number;
   segments?: number;
   className?: string;
-  tone?: "brand" | "success" | "warning";
+  // `danger` exists for a bar that is measuring something already failed — a
+  // deadline that passed with work outstanding. Warning would understate it:
+  // warning means "attention", danger means the thing did not happen.
+  tone?: "brand" | "success" | "warning" | "danger";
   label?: string;
 }) {
   const ratio = max > 0 ? Math.min(1, value / max) : 0;
   const lit = Math.round(ratio * segments);
   const litTone =
-    tone === "success" ? "bg-success" : tone === "warning" ? "bg-warning" : "bg-brand";
+    tone === "success"
+      ? "bg-success"
+      : tone === "warning"
+        ? "bg-warning"
+        : tone === "danger"
+          ? "bg-danger"
+          : "bg-brand";
 
   return (
     <div

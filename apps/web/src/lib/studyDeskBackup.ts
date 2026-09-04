@@ -1,6 +1,11 @@
 import type { StuckItem } from "./studyDesk.js";
 import { exportStudyAttachments, type StudyAttachmentMeta, type StudyDeskBackupAttachment } from "./studyDeskAttachments.js";
 
+/** Deliberately keeps its pre-rename value. This string is the format marker
+ * inside every backup file already sitting in someone's downloads folder —
+ * changing it would make the app reject its own past exports for no reason a
+ * user would ever see or care about. The product name changed; the file
+ * format didn't. */
 export const STUDY_DESK_BACKUP_KIND = "leettarget-study-desk-backup";
 export const STUDY_DESK_BACKUP_VERSION = 1;
 
@@ -33,8 +38,11 @@ export function createStudyDeskBackup(items: StuckItem[], attachments: StudyDesk
   };
 }
 
+/** The one place the old name was actually visible — a downloaded file lands
+ * in someone's folder with this on it, so it follows the product name. The
+ * `kind` marker inside the file does not (see above). */
 export function studyDeskBackupFilename(now = new Date()): string {
-  return `leettarget-study-desk-${now.toISOString().slice(0, 10)}.json`;
+  return `waypoint-study-desk-${now.toISOString().slice(0, 10)}.json`;
 }
 
 export async function downloadStudyDeskBackup(items: StuckItem[]): Promise<void> {
@@ -60,10 +68,10 @@ export function parseStudyDeskBackup(raw: string): BackupImportResult {
   }
 
   if (!isRecord(value) || value.kind !== STUDY_DESK_BACKUP_KIND) {
-    throw new Error("This isn't a LeetTarget study-desk backup.");
+    throw new Error("This isn't a Waypoint study-desk backup.");
   }
   if (value.version !== STUDY_DESK_BACKUP_VERSION) {
-    throw new Error("This backup was made with an unsupported version of LeetTarget.");
+    throw new Error("This backup was made with an unsupported version of Waypoint.");
   }
   if (!isIsoDate(value.exportedAt)) {
     throw new Error("This backup is missing a valid export date.");

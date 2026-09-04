@@ -37,7 +37,7 @@ export async function openTimerPip(initialLabel?: string): Promise<PipHandle | u
   const pipWindow = await pip.requestWindow({ width: 260, height: 140 });
   const doc = pipWindow.document;
 
-  doc.title = "LeetTarget timer";
+  doc.title = "Waypoint timer";
   doc.body.style.cssText =
     "margin:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;" +
     "background:#09090b;color:#f4f4f5;font-family:ui-monospace,'Geist Mono',monospace;gap:6px;";

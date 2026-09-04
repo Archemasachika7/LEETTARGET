@@ -1,4 +1,4 @@
-# LeetTarget
+# Waypoint
 
 I kept losing track of which LeetCode problems I had solved, which ones I was
 supposed to revise, and whether any of it showed up on my GitHub. So I built

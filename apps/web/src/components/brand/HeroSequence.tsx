@@ -18,7 +18,7 @@ const PANELS: Panel[] = [
   {
     eyebrow: "01 / The scattered queue",
     headline: [{ text: "Too many tabs." }, { text: "One next move.", accent: true }],
-    body: "LeetTarget turns a loose pile of problems into a trail you can actually follow.",
+    body: "Waypoint turns a loose pile of problems into a trail you can actually follow.",
     tagline: "From noise to signal",
     screen: {
       caption: "Unsorted / 84",
@@ -49,7 +49,7 @@ const PANELS: Panel[] = [
     body: "Targets, solves and streaks in one place, measured against numbers you set yourself.",
     tagline: "Progress, in context",
     screen: {
-      caption: "LeetTarget / Dashboard",
+      caption: "Waypoint / Dashboard",
       rows: [
         <div className="flex items-baseline gap-2">
           <span className="font-mono text-3xl font-bold tabular-nums text-text">47.2</span>
@@ -93,7 +93,7 @@ const PANELS: Panel[] = [
       rows: [
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-text">LeetTarget extension</p>
+            <p className="text-sm font-medium text-text">Waypoint extension</p>
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">Repository / solutions</p>
           </div>
           <span className="border border-brand/50 bg-brand/10 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-brand">

@@ -4,10 +4,17 @@ Guidance for Claude Code (or any agent) working in this repository.
 
 ## What this repo is
 
-LeetTarget: a website + browser extension for tracking LeetCode progress and
-mapping solved problems to a GitHub repo. Full product spec in `PROMPT.md`,
-architecture/milestones in `Plan.md`. Read both before making non-trivial
-changes — they're the source of truth for scope, not this file.
+Waypoint: a website + browser extension for working toward dated goals across
+several study tracks — LeetCode, GATE and CAT — with solved problems mapped
+back to a GitHub repo. Full product spec in `PROMPT.md`, architecture/
+milestones in `Plan.md`. Read both before making non-trivial changes — they're
+the source of truth for scope, not this file.
+
+**The tracks are peers.** LeetCode came first and still has the deepest
+feature set, but the app is no longer "a LeetCode tracker with exam modes
+attached": every track gets the same dated goals, the same countdown and pace
+reading, and its own workspace. Don't add a feature to the LeetCode side
+without at least asking what its GATE/CAT equivalent is.
 
 ## Layout
 
@@ -63,6 +70,11 @@ mastery and the roadmap depend on that enrichment having run, and say so
 when it hasn't. If you add a feature that needs data the schema doesn't
 hold, add the data — don't approximate it in the UI.
 
+The same rule governs goals: a goal with no `target_count` is a date with no
+quantity attached, so it gets a countdown and explicitly **no** percentage,
+progress bar or pace. `summariseGoal` returns `pace: "untracked"` for exactly
+this case — don't fill that gap with a plausible-looking 0%.
+
 ## Conventions
 
 - TypeScript everywhere, strict mode on. No `any` unless genuinely
@@ -76,7 +88,7 @@ hold, add the data — don't approximate it in the UI.
   proxy (`supabase/functions/leetcode-proxy`) — browsers can't call LeetCode
   directly due to CORS, so that hop has to be server-side.
 - Keep the extension LeetHub-compatible: it should still commit accepted
-  solutions to the user's GitHub repo even if LeetTarget's own sync fails —
+  solutions to the user's GitHub repo even if Waypoint's own sync fails —
   don't make the GitHub commit depend on the Supabase call succeeding.
 - Don't add a backend framework (Express/Next API routes/etc.) for
   CRUD that Supabase + RLS already covers. Only add a server-side function

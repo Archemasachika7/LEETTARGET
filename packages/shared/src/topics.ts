@@ -3,7 +3,7 @@
  * Every figure here is a ratio of *solved to seen*, where "seen" means "in
  * this user's own problem set" (their targets plus what they've solved). It
  * deliberately does **not** claim mastery of a topic in the abstract: without
- * accuracy or timing data, LeetTarget can only say how much of the reader's
+ * accuracy or timing data, Waypoint can only say how much of the reader's
  * own list they've worked through, and the labels below are worded to mean
  * exactly that. */
 

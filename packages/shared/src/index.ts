@@ -6,3 +6,4 @@ export * from "./progress.js";
 export * from "./topics.js";
 export * from "./achievements.js";
 export * from "./subjects.js";
+export * from "./goals.js";

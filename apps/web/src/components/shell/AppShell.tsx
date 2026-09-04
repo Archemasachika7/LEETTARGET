@@ -44,9 +44,9 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
 
       <header className="sticky top-0 z-40 border-b border-border bg-bg/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-content items-center gap-6 px-4 sm:px-6">
-          <NavLink to="/" className="shrink-0" aria-label="LeetTarget home">
+          <NavLink to="/" className="shrink-0" aria-label="Waypoint home">
             <Logo className="hidden sm:inline-flex" />
-            <LogoMark className="sm:hidden" title="LeetTarget" />
+            <LogoMark className="sm:hidden" title="Waypoint" />
           </NavLink>
 
           {/* Desktop navigation. Hidden on small screens, where the bottom bar

@@ -12,11 +12,11 @@ import { Button, Card } from "../../ui/index.js";
 import { cn } from "../../lib/cn.js";
 
 const GREETING =
-  "Ask me about your streak, your targets, where you're stuck, or where you stand on the leaderboard. I only know what's in LeetTarget's own data — your private stats, plus the public leaderboard everyone can already see.";
+  "Ask me about your streak, your targets, where you're stuck, or where you stand on the leaderboard. I only know what's in Waypoint's own data — your private stats, plus the public leaderboard everyone can already see.";
 
 /** A floating chat widget, present on every signed-in page, that answers
  * questions about the reader's own progress and the public leaderboard —
- * never another user's private data, and never a number LeetTarget doesn't
+ * never another user's private data, and never a number Waypoint doesn't
  * actually track. See lib/assistant/context.ts for exactly what data it's
  * given. */
 export function AssistantWidget() {

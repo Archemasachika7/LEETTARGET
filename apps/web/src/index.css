@@ -66,6 +66,19 @@
   --motion-celebrate: 900ms;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+
+  /* Fluid display scale.
+   *
+   * The instrument language was uniformly small — everything sat between 10px
+   * and 15px, which is correct for dense readouts but left no way to say "this
+   * number is the point of the screen". These three steps exist for the
+   * handful of figures that carry a page: a countdown, a headline, a total.
+   * They scale with the viewport so a phone doesn't get a headline wider than
+   * it is, and the tracking tightens as they grow, the way display type
+   * should. */
+  --step-display: clamp(2.5rem, 1.6rem + 4.2vw, 4.5rem);
+  --step-headline: clamp(1.6rem, 1.25rem + 1.6vw, 2.4rem);
+  --step-title: clamp(1.15rem, 1rem + 0.6vw, 1.5rem);
 }
 
 .dark {
@@ -162,6 +175,29 @@
   }
   .animate-toast-in {
     animation: toast-in var(--motion-normal) var(--ease) both;
+  }
+
+  /* Staggered entrance for a row of sibling panels. Each child starts a beat
+   * after the one before it, so a dense grid resolves left-to-right instead of
+   * flashing in as one block — the eye gets told what order to read in. Capped
+   * at six because past that the last item feels broken rather than
+   * choreographed. */
+  .stagger > * {
+    animation: enter var(--motion-normal) var(--ease) both;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger > *:nth-child(2) { animation-delay: 45ms; }
+  .stagger > *:nth-child(3) { animation-delay: 90ms; }
+  .stagger > *:nth-child(4) { animation-delay: 135ms; }
+  .stagger > *:nth-child(5) { animation-delay: 180ms; }
+  .stagger > *:nth-child(n + 6) { animation-delay: 225ms; }
+
+  /* A single hairline of light along a panel's top edge. This is the only
+   * "depth" in the system: no coloured glow, no drop shadow — just the
+   * highlight a real bevelled edge would catch, which is what keeps a hero
+   * panel from reading as flat paper without turning it into a floating card. */
+  .edge-lit {
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.04);
   }
 }
 

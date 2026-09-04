@@ -14,7 +14,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   handleSolved(message.payload)
     .then(() => sendResponse({ ok: true }))
     .catch((err) => {
-      console.error("[LeetTarget] failed to handle solve:", err);
+      console.error("[Waypoint] failed to handle solve:", err);
       sendResponse({ ok: false, error: String(err) });
     });
 
@@ -27,7 +27,7 @@ async function handleSolved(submission: SolvedSubmission): Promise<void> {
   const difficulty = await fetchQuestionDifficulty(submission.slug);
 
   // Commit to GitHub first, independent of whether Supabase sync is
-  // configured or succeeds — LeetTarget should never be a worse LeetHub.
+  // configured or succeeds — Waypoint should never be a worse LeetHub.
   let githubPath: string | undefined;
   let commitSha: string | undefined;
 
@@ -43,16 +43,16 @@ async function handleSolved(submission: SolvedSubmission): Promise<void> {
       { owner: config.githubOwner, repo: config.githubRepo, branch: config.githubBranch },
       path,
       submission.code,
-      `LeetTarget: solve ${submission.title}`
+      `Waypoint: solve ${submission.title}`
     );
     githubPath = path;
     commitSha = result.commitSha;
   } else {
-    console.warn("[LeetTarget] GitHub repo not configured — open the extension options.");
+    console.warn("[Waypoint] GitHub repo not configured — open the extension options.");
   }
 
   await syncToSupabase(config, submission, difficulty, githubPath, commitSha).catch((err) => {
-    console.warn("[LeetTarget] Supabase sync failed (solution was still committed to GitHub):", err);
+    console.warn("[Waypoint] Supabase sync failed (solution was still committed to GitHub):", err);
   });
 }
 

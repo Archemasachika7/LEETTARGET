@@ -4,8 +4,10 @@ import { ArrowRight, ListChecks } from "lucide-react";
 import { summariseStreaks, type UserGoals } from "@leettarget/shared";
 import { useUserData } from "../lib/userData.js";
 import { useTopics } from "../lib/useTopics.js";
+import { useGoals } from "../lib/useGoals.js";
 import { useStudyDesk } from "../lib/studyDesk.js";
 import { getUserGoals } from "../lib/api.js";
+import { GoalDeck } from "../components/goals/GoalDeck.js";
 import { recommendNext } from "../lib/recommend.js";
 import { ProgressSummary } from "../components/ProgressSummary.js";
 import { DifficultyBreakdown } from "../components/DifficultyBreakdown.js";
@@ -37,6 +39,7 @@ export function DashboardPage() {
   const { userId, targets, solved, refreshTick, refresh, loading } = useUserData();
   const [goals, setGoals] = useState<UserGoals>();
   const [goalsLoaded, setGoalsLoaded] = useState(false);
+  const { goals: datedGoals, loading: datedGoalsLoading, refresh: refreshDatedGoals } = useGoals(userId);
 
   useEffect(() => {
     getUserGoals(userId)
@@ -65,10 +68,25 @@ export function DashboardPage() {
     <div className="flex flex-col gap-8">
       <header>
         <p className="text-sm text-text-muted">{greeting(new Date())}.</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text">
+        <h1 className="mt-2 text-headline font-semibold text-text">
           {statusLine({ goals, streaks, pendingCount, solvedTotal: solved.length })}
         </h1>
       </header>
+
+      {/* Deadlines lead. The daily/weekly cadence below answers "what about
+       * today"; this answers "and is today enough", which is the question a
+       * fixed date makes possible to ask at all. */}
+      {datedGoalsLoading ? (
+        <Skeleton className="h-40 w-full" />
+      ) : (
+        <GoalDeck
+          goals={datedGoals}
+          track="leetcode"
+          userId={userId}
+          progressFor={() => solved.length}
+          onChanged={refreshDatedGoals}
+        />
+      )}
 
       {!goalsLoaded ? (
         <Skeleton className="h-28 w-full" />

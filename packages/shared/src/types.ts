@@ -160,6 +160,51 @@ export interface PracticeSession {
   createdAt: string;
 }
 
+/** The study tracks the app is organised around. LeetCode is one of three
+ * peers here, not the product with two add-ons: each track owns its own
+ * goals, its own workspace and its own progress reading. */
+export type GoalTrack = "leetcode" | "gate" | "cat";
+
+/** A dated commitment — "GATE on 8 Feb", "500 problems before placements",
+ * "CAT mocks done by October".
+ *
+ * `targetDate` is the whole point: a goal without a deadline is a wish, and
+ * the pace maths in `goals.ts` has nothing to measure against. `targetCount`
+ * is optional, because some goals are purely a date on the calendar (the exam
+ * itself) with no quantity attached — those get a countdown and honestly
+ * nothing more. */
+export interface Goal {
+  id: string;
+  userId: string;
+  track: GoalTrack;
+  title: string;
+  /** `YYYY-MM-DD`, read as a local calendar date (see `parseLocalDate`). */
+  targetDate: string;
+  /** How many units finish this goal. Absent = a date marker only. */
+  targetCount?: number;
+  /** What a unit is, for display: "problems", "topics", "mocks". */
+  unit?: string;
+  createdAt: string;
+  archivedAt?: string;
+}
+
+export type GoalPace = "ahead" | "on-track" | "behind" | "done" | "overdue" | "untracked";
+
+/** The computed state of a goal at a moment in time — see `summariseGoal`.
+ * The optional fields are all absent together, for a goal with no
+ * `targetCount`: there is no percentage of an unmeasured thing. */
+export interface GoalSummary {
+  daysLeft: number;
+  completed: number;
+  remaining?: number;
+  percent?: number;
+  requiredPerDay?: number;
+  requiredPerWeek?: number;
+  /** Where an evenly-paced effort would stand today. */
+  expectedByNow?: number;
+  pace: GoalPace;
+}
+
 /** A doubts-forum subject — GATE, CAT, PDSA, or anything else a user names.
  * Creation is open (see migration 0008_doubts.sql), so `slug` is the
  * normalised join key that keeps "PDSA", "pdsa" and "P.D.S.A." from

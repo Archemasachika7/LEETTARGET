@@ -11,7 +11,7 @@ export interface Recommendation {
  *
  * The signals here are deliberately limited to what the schema actually
  * records: which targets are still pending, when they were added, and where
- * they sit in an uploaded list. LeetTarget has no failed-attempt data, no
+ * they sit in an uploaded list. Waypoint has no failed-attempt data, no
  * timing data and no per-problem topic tags yet, so it cannot honestly claim
  * "you struggled with this" or "this shores up your weakest topic" — those
  * would be invented. Everything below is checkable against the data.
