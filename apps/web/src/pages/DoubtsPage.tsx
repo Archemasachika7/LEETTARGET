@@ -5,7 +5,7 @@ import type { Subject } from "@leettarget/shared";
 import { useUserData } from "../lib/userData.js";
 import { findOrCreateSubject, joinSubject, listMySubjects, listSubjects } from "../lib/doubts.js";
 import { getErrorMessage } from "../lib/errors.js";
-import { Button, Card, EmptyState, ErrorNote, Field, Input, SectionHeader, SkeletonRows, useToast } from "../ui/index.js";
+import { Button, Card, EmptyState, ErrorNote, Field, Input, PageHeader, SectionHeader, SkeletonRows, useToast } from "../ui/index.js";
 
 /** The forum's front door: subjects you're already in, and everything else
  * you could join or start. A subject is anything a user names — PDSA,
@@ -63,12 +63,11 @@ export function DoubtsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header>
-        <h1 className="text-xl font-semibold tracking-tight text-text">Doubts</h1>
-        <p className="mt-1 text-sm text-text-muted">
-          Questions and their solutions, kept where the people studying the same thing can find them.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Shared"
+        title="Doubts"
+        description="Questions and their solutions, kept where the people studying the same thing can find them."
+      />
 
       {error && <ErrorNote>{error}</ErrorNote>}
 

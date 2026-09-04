@@ -4,7 +4,7 @@ import { useTopics } from "../lib/useTopics.js";
 import { leetCodeProxyUrl } from "../lib/leetcodeConfig.js";
 import { TopicList } from "../components/TopicList.js";
 import { FocusAreas } from "../components/dashboard/FocusAreas.js";
-import { Button, Card, EmptyState, ErrorNote, SectionHeader, SkeletonRows, useToast } from "../ui/index.js";
+import { Button, Card, EmptyState, ErrorNote, PageHeader, SectionHeader, SkeletonRows, useToast } from "../ui/index.js";
 
 /** Topic coverage across everything the reader has solved or targeted.
  *
@@ -36,12 +36,11 @@ export function RoadmapPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-xl font-semibold tracking-tight text-text">Roadmap</h1>
-        <p className="mt-1 text-sm text-text-muted">
-          How much of your list you've covered, topic by topic — using LeetCode's own tags.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Coverage"
+        title="Roadmap"
+        description="How much of your list you've covered, topic by topic — using LeetCode's own tags."
+      />
 
       {error && <ErrorNote>{error}</ErrorNote>}
 

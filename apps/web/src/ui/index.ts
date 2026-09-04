@@ -7,3 +7,4 @@ export { ToastProvider, useToast } from "./Toast.js";
 export { Input, Textarea, Select, Field, ChoiceGroup } from "./Input.js";
 export { Tooltip } from "./Tooltip.js";
 export { Chassis, Panel, TelemetryBar, MonoLabel, StatusDot } from "./Chassis.js";
+export { PageHeader } from "./PageHeader.js";

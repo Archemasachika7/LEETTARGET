@@ -19,7 +19,7 @@ import { ActivityStrip } from "../components/dashboard/ActivityStrip.js";
 import { FocusAreas } from "../components/dashboard/FocusAreas.js";
 import { GoalsForm } from "../components/dashboard/GoalsForm.js";
 import { StudyTrackDashboard } from "../components/study/StudyTrackDashboard.js";
-import { Button, Card, EmptyState, SectionHeader, Skeleton, SkeletonRows } from "../ui/index.js";
+import { Button, Card, EmptyState, PageHeader, SectionHeader, Skeleton, SkeletonRows } from "../ui/index.js";
 
 function greeting(now: Date): string {
   const h = now.getHours();
@@ -66,12 +66,10 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header>
-        <p className="text-sm text-text-muted">{greeting(new Date())}.</p>
-        <h1 className="mt-2 text-headline font-semibold text-text">
-          {statusLine({ goals, streaks, pendingCount, solvedTotal: solved.length })}
-        </h1>
-      </header>
+      <PageHeader
+        eyebrow={`${greeting(new Date())} · LeetCode`}
+        title={statusLine({ goals, streaks, pendingCount, solvedTotal: solved.length })}
+      />
 
       {/* Deadlines lead. The daily/weekly cadence below answers "what about
        * today"; this answers "and is today enough", which is the question a
@@ -108,7 +106,7 @@ export function DashboardPage() {
 
       <ProgressSummary targets={targets} solved={solved} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="stagger grid gap-4 lg:grid-cols-2">
         <DifficultyBreakdown userId={userId} refreshKey={refreshTick} />
         <ActivityStrip solved={solved} />
       </div>

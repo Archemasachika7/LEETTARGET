@@ -8,6 +8,7 @@ import {
   Button,
   Chassis,
   MonoLabel,
+  PageHeader,
   Panel,
   ProgressBar,
   SectionHeader,
@@ -52,11 +53,11 @@ export function StudyTrackDashboard({ mode }: { mode: Exclude<StudyTrack, "leetc
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="max-w-2xl">
-        <MonoLabel index={track.shortLabel}>{track.kicker}</MonoLabel>
-        <h1 className="mt-3 text-headline font-semibold text-text">A place to return to difficult work.</h1>
-        <p className="mt-3 text-sm leading-6 text-text-muted">{track.description}</p>
-      </header>
+      <PageHeader
+        eyebrow={`${track.label} · ${track.kicker}`}
+        title="A place to return to difficult work."
+        description={track.description}
+      />
 
       {/* The same dated spine as every other track. Progress on an exam goal is
        * counted as items worked through and cleared — the only quantity this
