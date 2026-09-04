@@ -19,6 +19,7 @@ import {
   EmptyState,
   ErrorNote,
   SectionHeader,
+  PageHeader,
   SkeletonRows,
   useToast,
 } from "../ui/index.js";
@@ -89,18 +90,19 @@ export function PracticePage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-text">Practice</h1>
-          <p className="mt-1 text-sm text-text-muted">Work through a focused run, or shape the list it draws from.</p>
-        </div>
-        <Link to="/doubts">
-          <Button size="sm" variant="ghost">
-            <MessageCircleQuestion className="h-3.5 w-3.5" aria-hidden />
-            Community doubts
-          </Button>
-        </Link>
-      </header>
+      <PageHeader
+        eyebrow="LeetCode"
+        title="Practice"
+        description="Work through a focused run, or shape the list it draws from."
+        action={
+          <Link to="/doubts">
+            <Button size="sm" variant="ghost">
+              <MessageCircleQuestion className="h-3.5 w-3.5" aria-hidden />
+              Community doubts
+            </Button>
+          </Link>
+        }
+      />
 
       {error && <ErrorNote>{error}</ErrorNote>}
 

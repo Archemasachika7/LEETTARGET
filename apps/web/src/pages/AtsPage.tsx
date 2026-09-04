@@ -3,7 +3,7 @@ import { FileText } from "lucide-react";
 import { analyzeResume } from "../lib/ats/scorer";
 import type { AtsReport, AtsSeverity } from "../lib/ats/scorer";
 import { secondOpinionEnabled, getSecondOpinion } from "../lib/ats/llm";
-import { Badge, Button, Card, EmptyState, Eyebrow, Field, SectionHeader, Textarea } from "../ui/index.js";
+import { Badge, Button, Card, EmptyState, Eyebrow, Field, PageHeader, SectionHeader, Textarea } from "../ui/index.js";
 import { cn } from "../lib/cn.js";
 
 type Tier = "success" | "brand" | "warning" | "danger";
@@ -73,13 +73,11 @@ export default function AtsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header>
-        <h1 className="text-xl font-semibold tracking-tight text-text">ATS check</h1>
-        <p className="mt-1 text-sm text-text-muted">
-          Paste your resume and get a score out of 100, with the exact reasons behind it. Add the job
-          description too and the keyword score gets real instead of guessed.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Applications"
+        title="ATS check"
+        description="Paste your resume and get a score out of 100, with the exact reasons behind it. Add the job description too and the keyword score gets real instead of guessed."
+      />
 
       <section className="grid gap-4 md:grid-cols-2">
         <Field label="Resume text">

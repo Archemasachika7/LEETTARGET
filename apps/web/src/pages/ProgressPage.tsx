@@ -8,7 +8,7 @@ import { Leaderboard } from "../components/Leaderboard.js";
 import { ProgressSummary } from "../components/ProgressSummary.js";
 import { ActivityStrip } from "../components/dashboard/ActivityStrip.js";
 import { Achievements } from "../components/Achievements.js";
-import { Card, ChoiceGroup, Eyebrow, Stat } from "../ui/index.js";
+import { Card, ChoiceGroup, Eyebrow, PageHeader, Stat } from "../ui/index.js";
 
 type View = "overview" | "solutions" | "leaderboard";
 
@@ -50,35 +50,36 @@ export function ProgressPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-text">Progress</h1>
-          <p className="mt-1 text-sm text-text-muted">What you've solved, and how it maps to your repo.</p>
-        </div>
-        <ChoiceGroup
-          label="Progress view"
-          value={view}
-          onChange={setView}
-          options={[
-            { value: "overview", label: "Overview" },
-            { value: "solutions", label: "Solutions" },
-            { value: "leaderboard", label: "Leaderboard" },
-          ]}
-        />
-      </header>
+      <PageHeader
+        eyebrow="Record"
+        title="Progress"
+        description="What you've solved, and how it maps to your repo."
+        action={
+          <ChoiceGroup
+            label="Progress view"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "overview", label: "Overview" },
+              { value: "solutions", label: "Solutions" },
+              { value: "leaderboard", label: "Leaderboard" },
+            ]}
+          />
+        }
+      />
 
       {view === "overview" && (
         <div className="flex flex-col gap-6">
           <ProgressSummary targets={targets} solved={solved} />
 
-          <Card className="grid grid-cols-2 gap-6 p-4 sm:grid-cols-4">
+          <Card className="stagger grid grid-cols-2 gap-6 p-4 sm:grid-cols-4">
             <Stat label="Current streak" value={streaks.current} sub="days" animate />
             <Stat label="Longest streak" value={streaks.longest} sub="days" animate />
             <Stat label="Active days" value={streaks.activeDays} sub="with a solve" animate />
             <Stat label="This week" value={streaks.solvedThisWeek} sub="solved" animate />
           </Card>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="stagger grid gap-4 lg:grid-cols-2">
             <DifficultyBreakdown userId={userId} refreshKey={refreshTick} />
             <ActivityStrip solved={solved} />
           </div>

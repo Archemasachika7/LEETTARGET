@@ -3,6 +3,7 @@ import { ProfileForm } from "../components/ProfileForm.js";
 import { RepoMappingForm } from "../components/RepoMappingForm.js";
 import { ExtensionSetup } from "../components/ExtensionSetup.js";
 import { ColdmailerLink } from "../components/ColdmailerLink.js";
+import { PageHeader } from "../ui/index.js";
 
 /** Identity and integrations in one place — who you are on the leaderboard,
  * the connections (GitHub repo, browser extension) that feed data in, and a
@@ -12,10 +13,11 @@ export function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header>
-        <h1 className="text-xl font-semibold tracking-tight text-text">Profile</h1>
-        <p className="mt-1 text-sm text-text-muted">Your public identity, and the integrations that sync your solves.</p>
-      </header>
+      <PageHeader
+        eyebrow="Account"
+        title="Profile"
+        description="Your public identity, and the integrations that sync your solves."
+      />
 
       <ProfileForm userId={userId} />
 
