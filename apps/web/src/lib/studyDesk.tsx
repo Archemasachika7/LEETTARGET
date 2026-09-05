@@ -1,8 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { StudyAttachmentMeta } from "./studyDeskAttachments.js";
 
-export type StudyTrack = "leetcode" | "gate" | "cat";
+export type StudyTrack = "leetcode" | "gate" | "cat" | "google-skills";
 export type StuckItemStatus = "stuck" | "revisit" | "cleared";
+
+/** Tracks that use the local stuck-desk model (see `StuckItem` below).
+ * LeetCode has its own progression system; Google Skills is logged
+ * server-side (see `skill_items` / `useSkillItems`) rather than as
+ * device-local revision notes, since a badge earned on one device should
+ * still show up on another. */
+export type StuckDeskTrack = Exclude<StudyTrack, "leetcode" | "google-skills">;
 
 export interface StudyTrackInfo {
   id: StudyTrack;
@@ -17,7 +24,7 @@ export interface StudyTrackInfo {
 
 export interface StuckItem {
   id: string;
-  track: Exclude<StudyTrack, "leetcode">;
+  track: StuckDeskTrack;
   title: string;
   subject: string;
   note?: string;
@@ -61,6 +68,16 @@ export const STUDY_TRACKS: Record<StudyTrack, StudyTrackInfo> = {
     deskTitle: "CAT stuck desk",
     capturePrompt: "Save the set, the method you missed, and the cue for your next attempt.",
     subjects: ["Quantitative aptitude", "DILR", "VARC", "Mock analysis", "Other"],
+  },
+  "google-skills": {
+    id: "google-skills",
+    label: "Google Skills",
+    shortLabel: "GSKL",
+    kicker: "Cloud & career certificates",
+    description: "Cloud Skills Boost labs and quests, Google Career Certificates, and anything else you're building toward.",
+    deskTitle: "Skill log",
+    capturePrompt: "Log the badge, course or skill you're working toward.",
+    subjects: ["Cloud Skills Boost", "Career Certificate", "General"],
   },
 };
 

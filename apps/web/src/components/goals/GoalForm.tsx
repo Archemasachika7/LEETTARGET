@@ -12,6 +12,7 @@ const PLACEHOLDER: Record<GoalTrack, { title: string; unit: string }> = {
   leetcode: { title: "500 problems before placements", unit: "problems" },
   gate: { title: "GATE 2027", unit: "topics" },
   cat: { title: "CAT 2026", unit: "mocks" },
+  "google-skills": { title: "Associate Cloud Engineer badges", unit: "badges" },
 };
 
 interface Props {

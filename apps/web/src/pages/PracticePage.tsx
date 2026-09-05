@@ -13,6 +13,7 @@ import { TargetsTable } from "../components/TargetsTable.js";
 import { PracticeSession } from "../components/practice/PracticeSession.js";
 import { PracticeTimer } from "../components/practice/PracticeTimer.js";
 import { StuckDesk } from "../components/study/StuckDesk.js";
+import { GoogleSkillsLog } from "../components/study/GoogleSkillsLog.js";
 import {
   Button,
   Card,
@@ -28,7 +29,7 @@ import {
  * session draws from. The session leads, because working the queue is the
  * point and list management is the setup for it. */
 export function PracticePage() {
-  const { mode } = useStudyDesk();
+  const { mode, track } = useStudyDesk();
   const { userId, targets, refresh, refreshTick, loading } = useUserData();
   const toast = useToast();
   const [error, setError] = useState<string>();
@@ -85,7 +86,16 @@ export function PracticePage() {
 
   // GATE and CAT are purposefully independent from LeetCode targets. Their
   // work is a concise recall desk, not a second attempt to force exam questions
-  // through the coding-problem and GitHub-sync schema.
+  // through the coding-problem and GitHub-sync schema. Google Skills has no
+  // "solve a problem" workflow at all, so it gets its own log instead.
+  if (mode === "google-skills") {
+    return (
+      <div className="flex flex-col gap-8">
+        <PageHeader eyebrow={track.label} title={track.deskTitle} description={track.capturePrompt} />
+        <GoogleSkillsLog trackLabel={track.label} />
+      </div>
+    );
+  }
   if (mode !== "leetcode") return <StuckDesk mode={mode} />;
 
   return (
