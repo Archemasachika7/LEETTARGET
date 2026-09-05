@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { Archive, Check, CircleDot, Download, FileText, FolderUp, MessageCircleQuestion, Paperclip, RotateCcw, Trash2, Upload, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import { type StudyTrack, useStudyDesk } from "../../lib/studyDesk.js";
+import { type StuckDeskTrack, useStudyDesk } from "../../lib/studyDesk.js";
 import { deleteStudyAttachment, openStudyAttachment, restoreStudyAttachments, saveStudyAttachments, validateAttachmentFiles } from "../../lib/studyDeskAttachments.js";
 import { downloadStudyDeskBackup, parseStudyDeskBackup } from "../../lib/studyDeskBackup.js";
 import { Button, Chassis, EmptyState, Field, MonoLabel, Panel, Select, StatusDot, TelemetryBar, Textarea, Input, useToast } from "../../ui/index.js";
@@ -17,7 +17,7 @@ const STATUS_COPY = {
  * exhaustive tracker. This desk captures the question, the subject and the
  * thought that failed, then lets the learner bring it back when ready.
  */
-export function StuckDesk({ mode }: { mode: Exclude<StudyTrack, "leetcode"> }) {
+export function StuckDesk({ mode }: { mode: StuckDeskTrack }) {
   const { track, stuckItems, addStuckItem, mergeStuckItems, removeStuckItem, setStuckItemAttachments, setStuckItemStatus } = useStudyDesk();
   const toast = useToast();
   const importInputRef = useRef<HTMLInputElement>(null);

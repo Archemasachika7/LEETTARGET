@@ -160,10 +160,10 @@ export interface PracticeSession {
   createdAt: string;
 }
 
-/** The study tracks the app is organised around. LeetCode is one of three
- * peers here, not the product with two add-ons: each track owns its own
- * goals, its own workspace and its own progress reading. */
-export type GoalTrack = "leetcode" | "gate" | "cat";
+/** The study tracks the app is organised around. LeetCode is one of four
+ * peers here, not the product with add-ons: each track owns its own goals,
+ * its own workspace and its own progress reading. */
+export type GoalTrack = "leetcode" | "gate" | "cat" | "google-skills";
 
 /** A dated commitment — "GATE on 8 Feb", "500 problems before placements",
  * "CAT mocks done by October".
@@ -237,6 +237,29 @@ export interface Doubt {
   status: DoubtStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+/** What a Google Skills item actually is — grouping only, no behaviour
+ * difference beyond how it's labelled and filtered. */
+export type SkillItemKind = "cloud-skills-boost" | "career-certificate" | "general";
+
+export type SkillItemStatus = "planned" | "in-progress" | "done";
+
+/** One badge, course or self-declared skill on the Google Skills track.
+ * Manually logged, not synced — neither Cloud Skills Boost nor Coursera
+ * has a free public API, so there is nothing honest to auto-fetch. See
+ * migration 0013_google_skills.sql. */
+export interface SkillItem {
+  id: string;
+  userId: string;
+  kind: SkillItemKind;
+  title: string;
+  url?: string;
+  status: SkillItemStatus;
+  /** `YYYY-MM-DD`, a personal deadline for this one item. */
+  targetDate?: string;
+  completedAt?: string;
+  createdAt: string;
 }
 
 export type DoubtImageKind = "question" | "solution";

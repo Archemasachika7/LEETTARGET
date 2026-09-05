@@ -110,6 +110,15 @@ user picked in the options page.
   `commit_sha`, `solved_at`.
 - `csv_imports` — `user_id`, `filename`, `row_count`, `imported_at` (audit
   trail for "update map").
+- `goals` — dated commitments across every study track (`leetcode`, `gate`,
+  `cat`, `google-skills`): `user_id`, `track`, `title`, `target_date`,
+  `target_count` (nullable — a date-only goal), `unit`, `archived_at`.
+- `skill_items` — the Google Skills track's own log: `user_id`, `kind`
+  (`cloud-skills-boost` | `career-certificate` | `general`), `title`, `url`,
+  `status` (`planned` | `in-progress` | `done`), `target_date`,
+  `completed_at`. Manually entered, not synced — neither Cloud Skills Boost
+  nor Coursera exposes a free public API, so there is nothing to
+  auto-import without inventing progress the app can't actually verify.
 
 ## 6. CSV format
 
@@ -174,3 +183,9 @@ join key against `problems`.
   unofficial API and can change; the proxy should fail soft.
 - Hosting for the web app (Vercel/Netlify/GitHub Pages) — not blocking for
   local dev.
+- Google Skills sync: if Cloud Skills Boost or Coursera ever expose a
+  fetchable public profile (an official API, or a stable public-profile
+  page worth scraping), a `google-skills-proxy` edge function — the same
+  CORS/secrets hop as `leetcode-proxy` — would sit in front of `skill_items`
+  the way `daily-import` sits in front of `solved_problems`. Not built yet:
+  v1 is deliberately manual entry only, since neither has one today.

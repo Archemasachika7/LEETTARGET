@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, BookOpenCheck, Layers, RotateCcw } from "lucide-react";
-import { type StudyTrack, useStudyDesk } from "../../lib/studyDesk.js";
+import { type StuckDeskTrack, useStudyDesk } from "../../lib/studyDesk.js";
 import { useUserData } from "../../lib/userData.js";
 import { useGoals } from "../../lib/useGoals.js";
 import { GoalDeck } from "../goals/GoalDeck.js";
@@ -29,7 +29,7 @@ import {
  * follows with coverage across the track's own subjects, which is the exam
  * equivalent of topic mastery.
  */
-export function StudyTrackDashboard({ mode }: { mode: Exclude<StudyTrack, "leetcode"> }) {
+export function StudyTrackDashboard({ mode }: { mode: StuckDeskTrack }) {
   const { track, stuckItems } = useStudyDesk();
   const { userId } = useUserData();
   const { goals, loading: goalsLoading, refresh: refreshGoals } = useGoals(userId);

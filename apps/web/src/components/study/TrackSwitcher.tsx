@@ -1,4 +1,4 @@
-import { Code2, GraduationCap, Sigma } from "lucide-react";
+import { Award, Code2, GraduationCap, Sigma } from "lucide-react";
 import { STUDY_TRACKS, type StudyTrack, useStudyDesk } from "../../lib/studyDesk.js";
 import { cn } from "../../lib/cn.js";
 
@@ -6,6 +6,7 @@ const ICONS = {
   leetcode: Code2,
   gate: GraduationCap,
   cat: Sigma,
+  "google-skills": Award,
 } as const;
 
 /**

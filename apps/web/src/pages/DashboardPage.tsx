@@ -19,6 +19,7 @@ import { ActivityStrip } from "../components/dashboard/ActivityStrip.js";
 import { FocusAreas } from "../components/dashboard/FocusAreas.js";
 import { GoalsForm } from "../components/dashboard/GoalsForm.js";
 import { StudyTrackDashboard } from "../components/study/StudyTrackDashboard.js";
+import { GoogleSkillsDashboard } from "../components/study/GoogleSkillsDashboard.js";
 import { Button, Card, EmptyState, PageHeader, Reveal, SectionHeader, Skeleton, SkeletonRows } from "../ui/index.js";
 
 function greeting(now: Date): string {
@@ -61,7 +62,9 @@ export function DashboardPage() {
   const activeTargets = targets.filter((t) => t.status !== "done");
 
   // Keep the original LeetCode dashboard exactly as its own progression system.
-  // The exam modes intentionally have their own lighter recall workspace.
+  // The exam modes have their own lighter recall workspace; Google Skills has
+  // its own manually-logged skill list rather than a stuck desk.
+  if (mode === "google-skills") return <GoogleSkillsDashboard />;
   if (mode !== "leetcode") return <StudyTrackDashboard mode={mode} />;
 
   return (
