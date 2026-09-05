@@ -19,7 +19,7 @@ import { ActivityStrip } from "../components/dashboard/ActivityStrip.js";
 import { FocusAreas } from "../components/dashboard/FocusAreas.js";
 import { GoalsForm } from "../components/dashboard/GoalsForm.js";
 import { StudyTrackDashboard } from "../components/study/StudyTrackDashboard.js";
-import { Button, Card, EmptyState, PageHeader, SectionHeader, Skeleton, SkeletonRows } from "../ui/index.js";
+import { Button, Card, EmptyState, PageHeader, Reveal, SectionHeader, Skeleton, SkeletonRows } from "../ui/index.js";
 
 function greeting(now: Date): string {
   const h = now.getHours();
@@ -104,18 +104,29 @@ export function DashboardPage() {
 
       {loading ? <Skeleton className="h-40 w-full" /> : <NextTarget recommendations={recommendations} />}
 
-      <ProgressSummary targets={targets} solved={solved} />
+      {/* From here down the page is below the fold on most screens, so each
+       * block arrives as the reader reaches it rather than all at once on
+       * load. Above the fold keeps the shell's own entrance — revealing
+       * content that is already on screen would just make loading look
+       * slower. */}
+      <Reveal>
+        <ProgressSummary targets={targets} solved={solved} />
+      </Reveal>
 
-      <div className="stagger grid gap-4 lg:grid-cols-2">
+      <Reveal className="stagger grid gap-4 lg:grid-cols-2">
         <DifficultyBreakdown userId={userId} refreshKey={refreshTick} />
         <ActivityStrip solved={solved} />
-      </div>
+      </Reveal>
 
-      <FocusAreas focus={focus} />
+      <Reveal>
+        <FocusAreas focus={focus} />
+      </Reveal>
 
-      <ImportLeetCode userId={userId} onImported={refresh} />
+      <Reveal>
+        <ImportLeetCode userId={userId} onImported={refresh} />
+      </Reveal>
 
-      <section className="flex flex-col gap-3">
+      <Reveal as="section" className="flex flex-col gap-3">
         <SectionHeader
           title="Recent targets"
           icon={<ListChecks className="h-4 w-4 text-text-muted" aria-hidden />}
@@ -157,7 +168,7 @@ export function DashboardPage() {
         ) : (
           <TargetsTable targets={activeTargets.slice(0, 8)} />
         )}
-      </section>
+      </Reveal>
 
       {goals && (
         <Card className="p-4">
