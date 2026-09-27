@@ -9,7 +9,7 @@ import { TimerProvider } from "./lib/timerProvider.js";
 import { AppShell } from "./components/shell/AppShell.js";
 import { Logo } from "./components/brand/Logo.js";
 import { HeroSequence, PANEL_COUNT, SequenceDots } from "./components/brand/HeroSequence.js";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Play } from "lucide-react";
 import { GithubIcon } from "./components/brand/GithubIcon.js";
 import { DashboardPage } from "./pages/DashboardPage.js";
 import { PracticePage } from "./pages/PracticePage.js";
@@ -19,7 +19,7 @@ import { ProfilePage } from "./pages/ProfilePage.js";
 import { DoubtsPage } from "./pages/DoubtsPage.js";
 import { SubjectDoubtsPage } from "./pages/SubjectDoubtsPage.js";
 import AtsPage from "./pages/AtsPage.js";
-import { Button, Card, ToastProvider } from "./ui/index.js";
+import { Button, Card, Reveal, ToastProvider } from "./ui/index.js";
 
 export default function App() {
   if (!isSupabaseConfigured || !supabase) {
@@ -132,16 +132,25 @@ function SignInScreen({ supabase }: { supabase: SupabaseClient }) {
         <HeroSequence
           onIndexChange={setPanel}
           cta={
-            <Button
-              variant="primary"
-              size="lg"
-              className="w-full active:scale-[0.985]"
-              onClick={() => supabase.auth.signInWithOAuth({ provider: "github" })}
-            >
-              <GithubIcon />
-              Continue with GitHub
-              <ArrowUpRight className="ml-auto h-4 w-4" aria-hidden />
-            </Button>
+            <>
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full active:scale-[0.985]"
+                onClick={() => supabase.auth.signInWithOAuth({ provider: "github" })}
+              >
+                <GithubIcon />
+                Continue with GitHub
+                <ArrowUpRight className="ml-auto h-4 w-4" aria-hidden />
+              </Button>
+              <a
+                href="#tour"
+                className="mt-4 flex w-fit items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted transition-colors duration-fast hover:text-text"
+              >
+                <Play className="h-3 w-3" aria-hidden />
+                Watch the 21-second tour
+              </a>
+            </>
           }
         />
 
@@ -153,6 +162,51 @@ function SignInScreen({ supabase }: { supabase: SupabaseClient }) {
           <span>LeetCode progress, made legible</span>
         </footer>
       </div>
+
+      {/* Below the fold on purpose: the hero stays the first impression, and
+       * the tour is there for anyone who scrolls or follows the link. It has a
+       * soundtrack, so it never autoplays — preload="none" also keeps the
+       * sign-in screen from downloading it until someone presses play. */}
+      <section id="tour" aria-labelledby="tour-title" className="relative mx-auto max-w-6xl scroll-mt-6 pb-16 pt-12">
+        <Reveal>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand">The tour / 0:21</p>
+              <h2 id="tour-title" className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-text sm:text-4xl">
+                See Waypoint in 21 seconds.
+              </h2>
+            </div>
+            <p className="max-w-sm font-mono text-[12px] leading-5 text-text-muted">
+              Four tracks with dated goals, and solves that commit themselves to GitHub.
+            </p>
+          </div>
+
+          <div className="mt-6 border border-border bg-elevated">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <div className="flex gap-1.5" aria-hidden>
+                <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+                <span className="h-1.5 w-1.5 rounded-full bg-border-strong" />
+                <span className="h-1.5 w-1.5 rounded-full bg-border-strong" />
+              </div>
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-muted">Waypoint / Launch tour</span>
+            </div>
+            <video
+              className="block aspect-video w-full bg-bg"
+              poster="/waypoint-tour.jpg"
+              controls
+              playsInline
+              preload="none"
+            >
+              {/* MP4 first for Safari; builds without H.264 (open-source
+               * Chromium on Linux, some Firefox installs) fall through to WebM. */}
+              <source src="/waypoint-tour.mp4" type='video/mp4; codecs="avc1.640028, mp4a.40.2"' />
+              <source src="/waypoint-tour.webm" type='video/webm; codecs="vp9, opus"' />
+              A 21-second tour of Waypoint: dated goals across LeetCode, GATE, CAT and Google Skills, GitHub sync, and
+              shared practice sessions.
+            </video>
+          </div>
+        </Reveal>
+      </section>
     </div>
   );
 }
