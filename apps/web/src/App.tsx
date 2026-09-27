@@ -19,6 +19,7 @@ import { ProfilePage } from "./pages/ProfilePage.js";
 import { DoubtsPage } from "./pages/DoubtsPage.js";
 import { SubjectDoubtsPage } from "./pages/SubjectDoubtsPage.js";
 import AtsPage from "./pages/AtsPage.js";
+import { ZonePage } from "./pages/ZonePage.js";
 import { Button, Card, Reveal, ToastProvider } from "./ui/index.js";
 
 export default function App() {
@@ -83,21 +84,32 @@ function SignedInApp({ supabase }: { supabase: SupabaseClient }) {
         <UserDataProvider userId={session.user.id}>
           <StudyDeskProvider userId={session.user.id}>
             <TimerProvider>
-              <AppShell theme={theme} onToggleTheme={toggleTheme} onSignOut={() => supabase.auth.signOut()}>
-                <Routes>
-                  <Route path="/" element={<DashboardPage />} />
-                  <Route path="/practice" element={<PracticePage />} />
-                  <Route path="/ats" element={<AtsPage />} />
-                  <Route path="/roadmap" element={<RoadmapPage />} />
-                  <Route path="/doubts" element={<DoubtsPage />} />
-                  <Route path="/doubts/:slug" element={<SubjectDoubtsPage />} />
-                  <Route path="/progress" element={<ProgressPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  {/* Anything unrecognised lands on the dashboard rather than a
-                   * dead end — there's no deep content worth a 404 page here. */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </AppShell>
+              <Routes>
+                {/* The exam zones sit outside the shell: they carry their own
+                 * header, their own look and their own light/dark switch. */}
+                <Route path="/zone" element={<Navigate to="/zone/gate" replace />} />
+                <Route path="/zone/:zone" element={<ZonePage />} />
+                <Route
+                  path="*"
+                  element={
+                    <AppShell theme={theme} onToggleTheme={toggleTheme} onSignOut={() => supabase.auth.signOut()}>
+                      <Routes>
+                        <Route path="/" element={<DashboardPage />} />
+                        <Route path="/practice" element={<PracticePage />} />
+                        <Route path="/ats" element={<AtsPage />} />
+                        <Route path="/roadmap" element={<RoadmapPage />} />
+                        <Route path="/doubts" element={<DoubtsPage />} />
+                        <Route path="/doubts/:slug" element={<SubjectDoubtsPage />} />
+                        <Route path="/progress" element={<ProgressPage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
+                        {/* Anything unrecognised lands on the dashboard rather than a
+                         * dead end — there's no deep content worth a 404 page here. */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </AppShell>
+                  }
+                />
+              </Routes>
             </TimerProvider>
           </StudyDeskProvider>
         </UserDataProvider>

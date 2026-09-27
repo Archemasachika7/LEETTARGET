@@ -31,6 +31,15 @@ export default {
         medium: "rgb(var(--medium) / <alpha-value>)",
         hard: "rgb(var(--hard) / <alpha-value>)",
         unknown: "rgb(var(--unknown) / <alpha-value>)",
+
+        // Exam zones only: see the .zone block in src/index.css.
+        "z-bg": "rgb(var(--z-bg) / <alpha-value>)",
+        "z-raised": "rgb(var(--z-raised) / <alpha-value>)",
+        "z-ink": "rgb(var(--z-ink) / <alpha-value>)",
+        "z-muted": "rgb(var(--z-muted) / <alpha-value>)",
+        "z-faint": "rgb(var(--z-faint) / <alpha-value>)",
+        "z-accent": "rgb(var(--z-accent) / <alpha-value>)",
+        "z-good": "rgb(var(--z-good) / <alpha-value>)",
       },
       borderRadius: {
         sm: "var(--radius-sm)",
@@ -40,6 +49,9 @@ export default {
       fontFamily: {
         sans: ["Geist", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["Geist Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        // The portfolio's pairing, used inside the exam zones.
+        sheet: ['"Neue Montreal"', '"Helvetica Neue"', "Arial", "sans-serif"],
+        plex: ['"IBM Plex Mono"', '"JetBrains Mono"', "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       // Fluid steps for the few figures that carry a page (see index.css).
       // Tracking tightens as size grows, which is what keeps large numerals
