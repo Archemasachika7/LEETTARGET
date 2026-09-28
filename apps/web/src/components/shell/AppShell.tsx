@@ -7,6 +7,7 @@ import { cn } from "../../lib/cn.js";
 import type { Theme } from "../../lib/theme.js";
 import { useScrolled } from "../../lib/useScrolled.js";
 import { TrackSwitcher } from "../study/TrackSwitcher.js";
+import { ZoneLink } from "../zone/ZoneLink.js";
 import { AssistantWidget } from "../assistant/AssistantWidget.js";
 
 /** The primary destinations, in the order of the product loop: see status
@@ -70,8 +71,9 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
           {/* Desktop navigation. Hidden on small screens, where the bottom bar
            * takes over — duplicating both would waste vertical space on the
            * viewport that has least of it. */}
-          <div className="hidden xl:block">
+          <div className="hidden items-center gap-2 xl:flex">
             <TrackSwitcher onTrackChange={() => navigate("/practice")} />
+            <ZoneLink />
           </div>
 
           <nav className="hidden flex-1 items-center gap-1 md:flex" aria-label="Primary">
@@ -123,8 +125,9 @@ export function AppShell({ children, theme, onToggleTheme, onSignOut }: Props) {
       {/* `key` on the route path restarts the enter animation on navigation —
        * a 6px rise, not a flight across the screen. */}
       <div className="border-b border-border bg-bg/70 px-4 py-2 sm:px-6 xl:hidden">
-        <div className="mx-auto max-w-content overflow-x-auto">
+        <div className="mx-auto flex max-w-content items-center gap-2 overflow-x-auto">
           <TrackSwitcher onTrackChange={() => navigate("/practice")} />
+          <ZoneLink />
         </div>
       </div>
 

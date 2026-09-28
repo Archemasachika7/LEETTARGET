@@ -119,6 +119,16 @@ user picked in the options page.
   `completed_at`. Manually entered, not synced — neither Cloud Skills Boost
   nor Coursera exposes a free public API, so there is nothing to
   auto-import without inventing progress the app can't actually verify.
+- Exam zones (`/zone/gate`, `/zone/cat`, migration 0014): `zone_progress`
+  (`user_id`, `exam` = `gate-da` | `cat`, `topic_id`, `status` = `studied` |
+  `revised`; no row means untouched), `zone_assignments` (optional file in
+  the private `zone-files` bucket under `{user_id}/{exam}/…`, `due_on`,
+  `done_at`) and `zone_schedule` (`on_date`, `kind`, optional `topic_id`).
+  Topic ids come from `packages/shared/src/zones.ts`, which holds the
+  official GATE DA syllabus and the (unofficial) CAT topic list. Progress
+  is readable by any signed-in user through the `zone_board` view, the
+  same trade the leaderboard makes; assignments and schedules are
+  owner-only.
 
 ## 6. CSV format
 

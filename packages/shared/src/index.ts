@@ -7,3 +7,5 @@ export * from "./topics.js";
 export * from "./achievements.js";
 export * from "./subjects.js";
 export * from "./goals.js";
+export * from "./zones.js";
+export * from "./pdsa.js";

@@ -75,6 +75,25 @@ export function StudyTrackDashboard({ mode }: { mode: StuckDeskTrack }) {
         />
       )}
 
+      <Link
+        to={`/zone/${mode}`}
+        className="group flex flex-col gap-3 border border-border bg-elevated p-5 transition-colors duration-fast hover:border-brand sm:flex-row sm:items-center sm:justify-between sm:p-6"
+      >
+        <div>
+          <MonoLabel>{mode === "gate" ? "GATE DA" : "CAT"} / Zone</MonoLabel>
+          <p className="mt-2 text-title font-medium text-text">The {mode === "gate" ? "GATE" : "CAT"} Zone</p>
+          <p className="mt-1 max-w-xl text-[13px] leading-5 text-text-muted">
+            {mode === "gate"
+              ? "The official DA syllabus as a checklist that syncs, every PDSA algorithm you can step through, plus schedule, assignments and sources."
+              : "The CAT topic list as a checklist that syncs, plus schedule, assignments, doubts and a checked list of sources."}
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-brand">
+          Open
+          <ArrowRight className="h-4 w-4 transition-transform duration-fast group-hover:translate-x-0.5" aria-hidden />
+        </span>
+      </Link>
+
       <Reveal as="section">
       <Chassis className="overflow-hidden">
         <TelemetryBar left={<span>{track.label} / recall desk</span>} right={<span>Keep the useful friction</span>} />

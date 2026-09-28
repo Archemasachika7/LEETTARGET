@@ -259,3 +259,60 @@
     transform: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Exam zones (/zone/gate, /zone/cat).
+ *
+ * The zones borrow the language of the Archemasachika7/3dportfolio site rather than
+ * Waypoint's instrument panel: a paper drawing sheet, near-black ink, one
+ * burnt-orange accent, hairline rules and square nodes. They carry their own
+ * light/dark switch, scoped to the zone root with data-zone-theme, so it
+ * doesn't touch the theme the rest of Waypoint uses. Paper is the default,
+ * whatever the OS says, the same way the portfolio opens on a light sheet.
+ * ------------------------------------------------------------------------- */
+.zone {
+  color-scheme: light;
+  --z-bg: 245 244 240;
+  --z-raised: 255 255 255;
+  --z-ink: 11 12 14;
+  --z-muted: 90 93 99;
+  --z-faint: 154 157 163;
+  --z-accent: 194 70 29;
+  --z-good: 46 125 50;
+  --z-grid: 11 12 14;
+}
+
+.zone[data-zone-theme="dark"] {
+  color-scheme: dark;
+  --z-bg: 10 10 11;
+  --z-raised: 17 18 20;
+  --z-ink: 242 241 237;
+  --z-muted: 155 157 163;
+  --z-faint: 106 109 115;
+  --z-accent: 226 102 47;
+  --z-good: 129 199 132;
+  --z-grid: 242 241 237;
+}
+
+.zone ::selection {
+  background: rgb(var(--z-accent) / 0.22);
+}
+
+.zone :focus-visible {
+  outline: 2px solid rgb(var(--z-accent));
+  outline-offset: 3px;
+  box-shadow: none;
+}
+
+.zone-grid {
+  background-image:
+    linear-gradient(to right, rgb(var(--z-grid) / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(var(--z-grid) / 0.06) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* The theme switch wipes the new sheet down over the old one (see
+ * useZoneTheme). Only the new snapshot animates; the old one sits still. */
+::view-transition-old(root) {
+  animation: none;
+}
