@@ -191,6 +191,13 @@
   .animate-toast-in {
     animation: toast-in var(--motion-normal) var(--ease) both;
   }
+  /* A flag landing on a "review" row: it settles in from slightly small,
+   * decelerating on the standard curve. No overshoot — the system has no
+   * bounce, so a "stamp" is a settle, not a thud. Runs once per mount, so a
+   * flagged row reads as deliberately marked rather than just listed. */
+  .animate-flag-in {
+    animation: flag-in var(--motion-normal) var(--ease) both;
+  }
 
   /* Staggered entrance for a row of sibling panels. Each child starts a beat
    * after the one before it, so a dense grid resolves left-to-right instead of
@@ -242,6 +249,17 @@
   from {
     opacity: 0;
     transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes flag-in {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
   }
   to {
     opacity: 1;

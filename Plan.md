@@ -174,7 +174,12 @@ join key against `problems`.
   before saving), a solved-by-difficulty progress chart
   (`DifficultyBreakdown`), and a solution-file mapping override UI (the
   "Solved" tab's `SolutionMappingTable` — corrects a wrong auto-detected
-  GitHub path per solve) are all in.
+  GitHub path per solve) are all in. The "Review today" queue is also in —
+  `ReviewQueue` on the dashboard, scheduler in
+  `packages/shared/src/review.ts`: a spaced-revision list that combines
+  yellow/red-flagged targets (always) with solves 2–45 days old (harder and
+  older first), built only from `solved_at` timestamps and target flags so it
+  invents no accuracy/timing/recall model the data doesn't hold.
 - **M4 — Ship** (mostly done): hosted site is live on Vercel
   (`https://leetprodetails.vercel.app`, config in `apps/web/vercel.json`).
   Extension packaging is ready — real icons, `npm run package:ext` zips a
