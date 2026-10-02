@@ -14,6 +14,7 @@ import { DifficultyBreakdown } from "../components/DifficultyBreakdown.js";
 import { ImportLeetCode } from "../components/ImportLeetCode.js";
 import { TargetsTable } from "../components/TargetsTable.js";
 import { NextTarget } from "../components/dashboard/NextTarget.js";
+import { ReviewQueue } from "../components/dashboard/ReviewQueue.js";
 import { NoGoalsCard, TodayCard } from "../components/dashboard/TodayCard.js";
 import { ActivityStrip } from "../components/dashboard/ActivityStrip.js";
 import { FocusAreas } from "../components/dashboard/FocusAreas.js";
@@ -105,7 +106,15 @@ export function DashboardPage() {
         </NoGoalsCard>
       )}
 
-      {loading ? <Skeleton className="h-40 w-full" /> : <NextTarget recommendations={recommendations} />}
+      {loading ? <Skeleton className="h-40 w-full" /> : (
+        <>
+          <NextTarget recommendations={recommendations} />
+          {/* "Solve this next" answered — now the other half of deliberate
+           * practice: what to go back over. Built only from recorded solves
+           * and flags, so it never invents a recall model. */}
+          <ReviewQueue userId={userId} targets={targets} refreshKey={refreshTick} />
+        </>
+      )}
 
       {/* From here down the page is below the fold on most screens, so each
        * block arrives as the reader reaches it rather than all at once on
